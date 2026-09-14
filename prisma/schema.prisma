@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Run seed with: npm run db:seed
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String            @id @default(cuid())
+  username          String            @unique
+  passwordHash      String
+  email             String?
+  isActive          Boolean           @default(true)
+  canChangeUsername Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  roleId            String
+  role              Role              @relation(fields: [roleId], references: [id])
+  assignments       AssetAssignment[]
+  transfers         AssetTransfer[]
+  historyEvents     AssetHistory[]
+  importLogs        ImportLog[]
+
+  @@index([username])
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  nameAr      String?
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id       String           @id @default(cuid())
+  key      String           @unique
+  name     String
+  nameAr   String?
+  category String
+  roles    RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  nameAr      String?
+  code        String?  @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  assets      Asset[]
+  persons     Person[]
+
+  @@map("departments")
+}
+
+model Branch {
+  id            String          @id @default(cuid())
+  name          String
+  nameAr        String?
+  code          String?         @unique
+  address       String?
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  assets        Asset[]
+  transfersFrom AssetTransfer[] @relation("FromBranch")
+  transfersTo   AssetTransfer[] @relation("ToBranch")
+
+  @@map("branches")
+}
+
+model Person {
+  id            String            @id @default(cuid())
+  name          String
+  nameAr        String?
+  employeeId    String?           @unique
+  departmentId  String?
+  department    Department?       @relation(fields: [departmentId], references: [id])
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  assignments   AssetAssignment[]
+  currentAssets Asset[]           @relation("CurrentAssignee")
+
+  @@index([name])
+  @@map("persons")
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  IN_MAINTENANCE
+  IN_REPAIR
+  RETIRED
+  LOST
+  DISPOSED
+}
+
+enum AssetCondition {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+  DAMAGED
+}
+
+model Asset {
+  id                String               @id @default(cuid())
+  assetCode         String               @unique
+  name              String
+  nameAr            String?
+  category          String?
+  categoryAr        String?
+  serialNumber      String?
+  model             String?
+  manufacturer      String?
+  departmentId      String?
+  department        Department?          @relation(fields: [departmentId], references: [id])
+  branchId          String?
+  branch            Branch?              @relation(fields: [branchId], references: [id])
+  status            AssetStatus          @default(AVAILABLE)
+  condition         AssetCondition       @default(GOOD)
+  purchaseDate      DateTime?
+  purchasePrice     Decimal?             @db.Decimal(15, 2)
+  currentValue      Decimal?             @db.Decimal(15, 2)
+  depreciationRate  Decimal?             @db.Decimal(5, 2)
+  notes             String?
+  currentAssigneeId String?
+  currentAssignee   Person?              @relation("CurrentAssignee", fields: [currentAssigneeId], references: [id])
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  assignments       AssetAssignment[]
+  transfers         AssetTransfer[]
+  history           AssetHistory[]
+  depreciation      DepreciationRecord[]
+
+  @@index([assetCode])
+  @@index([name])
+  @@index([status])
+  @@index([departmentId])
+  @@index([branchId])
+  @@index([currentAssigneeId])
+  @@map("assets")
+}
+
+model AssetAssignment {
+  id           String    @id @default(cuid())
+  assetId      String
+  asset        Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  personId     String
+  person       Person    @relation(fields: [personId], references: [id])
+  assignedById String
+  assignedBy   User      @relation(fields: [assignedById], references: [id])
+  assignedAt   DateTime  @default(now())
+  returnedAt   DateTime?
+  notes        String?
+
+  @@index([assetId])
+  @@index([personId])
+  @@map("asset_assignments")
+}
+
+model AssetTransfer {
+  id              String   @id @default(cuid())
+  assetId         String
+  asset           Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  fromBranchId    String?
+  fromBranch      Branch?  @relation("FromBranch", fields: [fromBranchId], references: [id])
+  toBranchId      String
+  toBranch        Branch   @relation("ToBranch", fields: [toBranchId], references: [id])
+  transferredById String
+  transferredBy   User     @relation(fields: [transferredById], references: [id])
+  transferDate    DateTime @default(now())
+  notes           String?
+
+  @@index([assetId])
+  @@map("asset_transfers")
+}
+
+enum HistoryEventType {
+  CREATED
+  UPDATED
+  ASSIGNED
+  RETURNED
+  TRANSFERRED
+  STATUS_CHANGED
+  CONDITION_CHANGED
+  MAINTENANCE
+  ISSUE_REPORTED
+  DEPRECIATION
+  NOTE_ADDED
+  IMPORTED
+}
+
+model AssetHistory {
+  id            String           @id @default(cuid())
+  assetId       String
+  asset         Asset            @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  eventType     HistoryEventType
+  title         String
+  titleAr       String?
+  description   String?
+  descriptionAr String?
+  metadata      Json?
+  createdById   String?
+  createdBy     User?            @relation(fields: [createdById], references: [id])
+  createdAt     DateTime         @default(now())
+
+  @@index([assetId])
+  @@index([createdAt])
+  @@index([eventType])
+  @@map("asset_history")
+}
+
+model DepreciationRecord {
+  id                 String   @id @default(cuid())
+  assetId            String
+  asset              Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  previousValue      Decimal? @db.Decimal(15, 2)
+  newValue           Decimal  @db.Decimal(15, 2)
+  depreciationAmount Decimal  @db.Decimal(15, 2)
+  recordedAt         DateTime @default(now())
+  notes              String?
+
+  @@index([assetId])
+  @@map("depreciation_records")
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model ImportLog {
+  id           String   @id @default(cuid())
+  fileName     String
+  totalRows    Int
+  successCount Int
+  failedCount  Int
+  details      Json
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@map("import_logs")
+}
