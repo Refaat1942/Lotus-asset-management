@@ -151,6 +151,7 @@ model Asset {
   currentValue      Decimal?             @db.Decimal(15, 2)
   depreciationRate  Decimal?             @db.Decimal(5, 2)
   notes             String?
+  qrToken           String?              @unique
   currentAssigneeId String?
   currentAssignee   Person?              @relation("CurrentAssignee", fields: [currentAssigneeId], references: [id])
   createdAt         DateTime             @default(now())

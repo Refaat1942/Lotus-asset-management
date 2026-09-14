@@ -122,12 +122,18 @@ export default function ImportPage() {
               <FileSpreadsheet className="w-10 h-10 text-lotus-600" />
             </div>
             <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('selectFile')}</h3>
-            <p className="text-sm text-slate-500 mb-6">Lotus-Items.xlsx or compatible Excel file</p>
-            <label className="btn-primary cursor-pointer inline-flex">
-              <Upload className="w-4 h-4" />
-              {t('selectFile')}
-              <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileSelect} />
-            </label>
+            <p className="text-sm text-slate-500 mb-6">{t('lotusTemplateHint')}</p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <a href="/api/import/template" className="btn-secondary inline-flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4" />
+                {t('downloadTemplate')}
+              </a>
+              <label className="btn-primary cursor-pointer inline-flex">
+                <Upload className="w-4 h-4" />
+                {t('selectFile')}
+                <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleFileSelect} />
+              </label>
+            </div>
             {loading && <p className="text-sm text-slate-400 mt-4">{t('loading')}</p>}
           </div>
         )}

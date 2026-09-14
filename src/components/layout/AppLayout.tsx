@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { NotificationToast } from '../ui/Notification';
+import { SmartAssistant } from '../assistant/SmartAssistant';
 import { useApp } from '@/contexts/AppContext';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -39,6 +40,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </main>
       <NotificationToast />
+      <SmartAssistant />
     </div>
   );
 }

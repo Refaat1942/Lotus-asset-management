@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { prisma } from './prisma';
 import { recordAssetHistory } from './asset-history';
+import { generateQrToken } from './qr-token';
 import { AssetCondition, AssetStatus, Prisma } from '@prisma/client';
 
 export interface ColumnMapping {
@@ -16,8 +17,24 @@ export interface ImportResult {
   failures: { row: number; reason: string; data?: Record<string, unknown> }[];
 }
 
-// Predefined mapping for Lotus-Items.xlsx (408 equipment records)
+// Official Lotus asset import template (2026)
 export const LOTUS_ITEMS_MAPPING: ColumnMapping[] = [
+  { excelColumn: 'Code', systemField: 'assetCode' },
+  { excelColumn: 'Assigned Employee Code', systemField: 'employeeId' },
+  { excelColumn: 'Assigned Employee Name', systemField: 'assignee' },
+  { excelColumn: 'Department', systemField: 'department' },
+  { excelColumn: 'Serial-Number', systemField: 'serialNumber' },
+  { excelColumn: 'Description', systemField: 'name' },
+  { excelColumn: 'Manufacturer', systemField: 'manufacturer' },
+  { excelColumn: 'Model-Name', systemField: 'model' },
+  { excelColumn: 'Device Price', systemField: 'purchasePrice' },
+  { excelColumn: 'Purchase Date', systemField: 'purchaseDate' },
+  { excelColumn: 'Device-Type', systemField: 'category' },
+  { excelColumn: 'Site Name', systemField: 'branch' },
+];
+
+// Legacy Lotus-Items.xlsx format
+export const LOTUS_LEGACY_MAPPING: ColumnMapping[] = [
   { excelColumn: 'Equipment', systemField: 'assetCode' },
   { excelColumn: 'Serial-Number', systemField: 'serialNumber' },
   { excelColumn: 'Device-Work', systemField: 'assignee' },
@@ -29,28 +46,43 @@ export const LOTUS_ITEMS_MAPPING: ColumnMapping[] = [
   { excelColumn: 'Device-Type', systemField: 'category' },
   { excelColumn: 'Functional Loc.', systemField: 'branch' },
   { excelColumn: 'Description_1', systemField: 'department' },
-  { excelColumn: 'Vendor-Name', systemField: 'notes' },
+];
+
+export const LOTUS_EXTRA_NOTE_COLUMNS = [
+  'Employee Position',
+  'Device',
+  'Operating System',
+  'Part No',
+  'Start-up date',
+  'Site',
+  'Any Desk User',
+  'Password Anydesk',
+  'User admin',
+  'Password admin',
+  'Ip',
+  'Vendor Name',
+  'Vendor-Name',
 ];
 
 const FIELD_ALIASES: Record<string, string[]> = {
-  assetCode: ['equipment', 'asset code', 'asset id', 'asset number', 'item code', 'item no', 'رقم الأصل', 'كود الأصل', 'رقم الصنف'],
-  name: ['description', 'name', 'asset name', 'item name', 'اسم الأصل', 'الوصف', 'item description'],
+  assetCode: ['code', 'equipment', 'asset code', 'asset id', 'asset number', 'item code', 'item no', 'رقم الأصل', 'كود الأصل', 'رقم الصنف'],
+  name: ['description', 'name', 'asset name', 'item name', 'device', 'اسم الأصل', 'الوصف', 'item description'],
   nameAr: ['name ar', 'arabic name', 'الاسم بالعربي', 'اسم عربي'],
   category: ['device-type', 'category', 'type', 'asset type', 'item type', 'الفئة', 'النوع', 'التصنيف'],
   serialNumber: ['serial-number', 'serial number', 'serial no', 's/n', 'الرقم التسلسلي'],
   model: ['model-name', 'model', 'الموديل', 'الطراز'],
   manufacturer: ['manufacturer', 'brand', 'make', 'الشركة المصنعة', 'الماركة'],
   department: ['description_1', 'department', 'dept', 'القسم', 'الإدارة'],
-  branch: ['functional loc.', 'functional loc', 'functional location', 'branch', 'location', 'site', 'الفرع', 'الموقع'],
+  branch: ['site name', 'functional loc.', 'functional loc', 'functional location', 'branch', 'location', 'site', 'الفرع', 'الموقع'],
   status: ['status', 'الحالة'],
   condition: ['condition', 'الحالة الفنية', 'حالة الأصل'],
-  purchaseDate: ['acquistion date', 'acquisition date', 'purchase date', 'date purchased', 'تاريخ الشراء', 'start-up date'],
-  purchasePrice: ['acquistnvalue', 'acquisition value', 'purchase price', 'cost', 'سعر الشراء', 'التكلفة'],
+  purchaseDate: ['purchase date', 'acquistion date', 'acquisition date', 'date purchased', 'تاريخ الشراء'],
+  purchasePrice: ['device price', 'acquistnvalue', 'acquisition value', 'purchase price', 'cost', 'سعر الشراء', 'التكلفة'],
   currentValue: ['current value', 'book value', 'القيمة الحالية', 'القيمة الدفترية'],
   depreciationRate: ['depreciation rate', 'dep rate', 'نسبة الإهلاك'],
   notes: ['vendor-name', 'device-work', 'notes', 'remarks', 'comments', 'ملاحظات', 'تعليقات'],
-  assignee: ['device-work', 'assignee', 'assigned to', 'employee', 'holder', 'المسؤول', 'الموظف', 'المستخدم'],
-  employeeId: ['employee id', 'emp id', 'staff id', 'رقم الموظف'],
+  assignee: ['assigned employee name', 'device-work', 'assignee', 'assigned to', 'employee', 'holder', 'المسؤول', 'الموظف', 'المستخدم'],
+  employeeId: ['assigned employee code', 'employee id', 'emp id', 'staff id', 'رقم الموظف'],
 };
 
 export type ImportMode = 'create' | 'update' | 'upsert';
@@ -91,14 +123,26 @@ function normalizeHeader(header: string): string {
   return header.toString().trim().toLowerCase();
 }
 
+function isNewLotusFormat(headers: string[]): boolean {
+  return ['Code', 'Serial-Number', 'Description', 'Device-Type'].every((col) => headers.includes(col));
+}
+
+function isLegacyLotusFormat(headers: string[]): boolean {
+  return ['Equipment', 'Serial-Number', 'Description', 'Device-Type'].every((col) => headers.includes(col));
+}
+
 function isLotusItemsFormat(headers: string[]): boolean {
-  const required = ['Equipment', 'Serial-Number', 'Description', 'Device-Type'];
-  return required.every((col) => headers.includes(col));
+  return isNewLotusFormat(headers) || isLegacyLotusFormat(headers);
+}
+
+function getLotusMapping(headers: string[]): ColumnMapping[] {
+  const base = isNewLotusFormat(headers) ? LOTUS_ITEMS_MAPPING : LOTUS_LEGACY_MAPPING;
+  return base.filter((m) => headers.includes(m.excelColumn));
 }
 
 export function detectColumns(headers: string[]): ColumnMapping[] {
   if (isLotusItemsFormat(headers)) {
-    const mapped = LOTUS_ITEMS_MAPPING.filter((m) => headers.includes(m.excelColumn));
+    const mapped = getLotusMapping(headers);
     const mappedColumns = new Set(mapped.map((m) => m.excelColumn));
 
     for (const header of headers) {
@@ -250,6 +294,8 @@ async function findOrCreatePerson(name: string, employeeId?: string, departmentI
 
 function buildNotes(row: Record<string, unknown>, mappings: ColumnMapping[]): string | undefined {
   const parts: string[] = [];
+  const mappedColumns = new Set(mappings.map((m) => m.excelColumn));
+
   const noteMappings = mappings.filter((m) => m.systemField === 'notes');
   if (noteMappings.length > 0) {
     for (const mapping of noteMappings) {
@@ -263,9 +309,21 @@ function buildNotes(row: Record<string, unknown>, mappings: ColumnMapping[]): st
     if (notes) parts.push(String(notes));
   }
 
-  if (row['Start-up date'] && !mappings.find((m) => m.excelColumn === 'Start-up date')) {
-    const d = parseDate(row['Start-up date']);
-    if (d) parts.push(`Start-up: ${d.toISOString().split('T')[0]}`);
+  for (const col of LOTUS_EXTRA_NOTE_COLUMNS) {
+    if (mappedColumns.has(col)) continue;
+    const value = row[col];
+    if (value === '' || value === null || value === undefined) continue;
+    if (col === 'Start-up date') {
+      const d = parseDate(value);
+      parts.push(d ? `Start-up: ${d.toISOString().split('T')[0]}` : `Start-up: ${String(value)}`);
+    } else {
+      parts.push(`${col}: ${String(value)}`);
+    }
+  }
+
+  const device = row['Device'];
+  if (device && !mappedColumns.has('Device') && !parts.some((p) => p.startsWith('Device:'))) {
+    parts.push(`Device: ${String(device)}`);
   }
 
   return parts.length ? parts.join(' | ') : undefined;
@@ -387,6 +445,7 @@ export async function importAssetsFromExcel(
             departmentId: fields.departmentId,
             branchId: fields.branchId,
             currentAssigneeId: fields.currentAssigneeId,
+            qrToken: existing.qrToken || generateQrToken(),
           },
         });
 
@@ -429,6 +488,7 @@ export async function importAssetsFromExcel(
           departmentId: fields.departmentId,
           branchId: fields.branchId,
           currentAssigneeId: fields.currentAssigneeId,
+          qrToken: generateQrToken(),
         },
       });
 

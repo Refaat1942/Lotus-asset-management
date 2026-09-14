@@ -31,6 +31,7 @@ echo "[2/6] Database setup..."
 npx prisma generate
 npx prisma db push
 npm run db:seed
+npm run qr:backfill
 
 echo "[3/6] Building application..."
 npm run build

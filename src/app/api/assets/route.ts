@@ -3,6 +3,7 @@ import { requirePermission } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { recordAssetHistory } from '@/lib/asset-history';
+import { generateQrToken } from '@/lib/qr-token';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
         currentValue: body.currentValue,
         depreciationRate: body.depreciationRate,
         notes: body.notes,
+        qrToken: generateQrToken(),
       },
       include: { department: true, branch: true },
     });

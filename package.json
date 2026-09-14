@@ -17,6 +17,7 @@
     "backup": "tsx scripts/backup.ts",
     "inspect-excel": "tsx scripts/inspect-excel.ts",
     "logo:sync": "tsx scripts/sync-logo-to-db.ts",
+    "qr:backfill": "tsx scripts/backfill-qr-tokens.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
