@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type CompanyLogoSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -30,13 +30,19 @@ export function CompanyLogo({
   onError,
 }: CompanyLogoProps) {
   const [failed, setFailed] = useState(false);
+  const [cacheKey, setCacheKey] = useState(0);
+
+  useEffect(() => {
+    setFailed(false);
+    setCacheKey(Date.now());
+  }, [src]);
 
   if (failed) {
     onError?.();
     return null;
   }
 
-  const logoSrc = src.startsWith('/api/') ? src : src.startsWith('/uploads/') ? '/api/settings/logo' : src;
+  const logoSrc = `${src.startsWith('/api/') ? src : '/api/settings/logo'}?v=${cacheKey}`;
 
   return (
     <img

@@ -16,6 +16,7 @@
     "db:studio": "prisma studio",
     "backup": "tsx scripts/backup.ts",
     "inspect-excel": "tsx scripts/inspect-excel.ts",
+    "logo:sync": "tsx scripts/sync-logo-to-db.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

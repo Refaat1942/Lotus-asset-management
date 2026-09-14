@@ -55,7 +55,11 @@ export default function SettingsPage() {
     if (res.ok) {
       const data = await res.json();
       setCompanyLogo(data.logo);
+      setSettings((prev) => ({ ...prev, logo: data.logo }));
       notify(t('savedSuccessfully'));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      notify(data.error || t('error'), 'error');
     }
   };
 
