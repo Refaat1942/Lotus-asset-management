@@ -20,8 +20,14 @@ interface Asset {
   nameAr?: string;
   category?: string;
   serialNumber?: string;
+  device?: string;
+  operatingSystem?: string;
+  partNo?: string;
   model?: string;
   manufacturer?: string;
+  employeePosition?: string;
+  site?: string;
+  vendorName?: string;
   status: string;
   condition?: string;
   departmentId?: string;
@@ -33,7 +39,7 @@ interface Asset {
   notes?: string;
   department?: { name: string; nameAr?: string };
   branch?: { name: string; nameAr?: string };
-  currentAssignee?: { name: string };
+  currentAssignee?: { name: string; employeeId?: string };
 }
 
 function toForm(asset?: Asset): AssetFormData {
@@ -207,31 +213,49 @@ export default function AssetsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[1400px]">
                 <thead>
                   <tr className="border-b border-slate-100">
-                    <th className="table-header">{t('assetCode')}</th>
-                    <th className="table-header">{t('assetName')}</th>
-                    <th className="table-header">{t('category')}</th>
-                    <th className="table-header">{t('department')}</th>
-                    <th className="table-header">{t('branch')}</th>
-                    <th className="table-header">{t('assignee')}</th>
-                    <th className="table-header">{t('status')}</th>
-                    <th className="table-header">{t('currentValue')}</th>
-                    <th className="table-header">{t('actions')}</th>
+                    <th className="table-header whitespace-nowrap">{t('assetCode')}</th>
+                    <th className="table-header whitespace-nowrap">{t('assetName')}</th>
+                    <th className="table-header whitespace-nowrap">{t('device')}</th>
+                    <th className="table-header whitespace-nowrap">{t('serialNumber')}</th>
+                    <th className="table-header whitespace-nowrap">{t('category')}</th>
+                    <th className="table-header whitespace-nowrap">{t('model')}</th>
+                    <th className="table-header whitespace-nowrap">{t('manufacturer')}</th>
+                    <th className="table-header whitespace-nowrap">{t('operatingSystem')}</th>
+                    <th className="table-header whitespace-nowrap">{t('partNo')}</th>
+                    <th className="table-header whitespace-nowrap">{t('department')}</th>
+                    <th className="table-header whitespace-nowrap">{t('branch')}</th>
+                    <th className="table-header whitespace-nowrap">{t('site')}</th>
+                    <th className="table-header whitespace-nowrap">{t('employeePosition')}</th>
+                    <th className="table-header whitespace-nowrap">{t('assignee')}</th>
+                    <th className="table-header whitespace-nowrap">{t('vendorName')}</th>
+                    <th className="table-header whitespace-nowrap">{t('status')}</th>
+                    <th className="table-header whitespace-nowrap">{t('currentValue')}</th>
+                    <th className="table-header whitespace-nowrap">{t('actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {assets.map((asset) => (
                     <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="table-cell font-mono text-xs font-medium text-lotus-700">{asset.assetCode}</td>
-                      <td className="table-cell font-medium">{asset.name}</td>
-                      <td className="table-cell">{asset.category || '-'}</td>
-                      <td className="table-cell">{asset.department?.name || '-'}</td>
-                      <td className="table-cell">{asset.branch?.name || '-'}</td>
-                      <td className="table-cell">{asset.currentAssignee?.name || '-'}</td>
+                      <td className="table-cell font-mono text-xs font-medium text-lotus-700 whitespace-nowrap">{asset.assetCode}</td>
+                      <td className="table-cell font-medium max-w-[200px] truncate" title={asset.name}>{asset.name}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.device || ''}>{asset.device || '-'}</td>
+                      <td className="table-cell font-mono text-xs whitespace-nowrap">{asset.serialNumber || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.category || ''}>{asset.category || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.model || ''}>{asset.model || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.manufacturer || ''}>{asset.manufacturer || '-'}</td>
+                      <td className="table-cell max-w-[100px] truncate" title={asset.operatingSystem || ''}>{asset.operatingSystem || '-'}</td>
+                      <td className="table-cell whitespace-nowrap">{asset.partNo || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.department?.name || ''}>{asset.department?.name || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.branch?.name || ''}>{asset.branch?.name || '-'}</td>
+                      <td className="table-cell whitespace-nowrap">{asset.site || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.employeePosition || ''}>{asset.employeePosition || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.currentAssignee?.name || ''}>{asset.currentAssignee?.name || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate" title={asset.vendorName || ''}>{asset.vendorName || '-'}</td>
                       <td className="table-cell"><StatusBadge status={asset.status} /></td>
-                      <td className="table-cell">{formatCurrency(asset.currentValue, locale)}</td>
+                      <td className="table-cell whitespace-nowrap">{formatCurrency(asset.currentValue, locale)}</td>
                       <td className="table-cell">
                         <div className="flex items-center gap-1">
                           <Link href={`/assets/${asset.id}`} className="p-2 hover:bg-slate-100 rounded-lg text-lotus-600" title={t('view')}>
