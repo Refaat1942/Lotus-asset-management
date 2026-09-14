@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -27,6 +28,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { t, hasPermission, companyLogo, locale, setLocale, user } = useApp();
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -41,22 +43,24 @@ export function Sidebar() {
     <aside className="fixed top-0 bottom-0 w-64 bg-white border-e border-slate-100 flex flex-col z-40"
       style={{ insetInlineStart: 0 }}>
       <div className="p-6 border-b border-slate-100">
-        {companyLogo ? (
-          <div className="space-y-3">
-            <CompanyLogo src={companyLogo} size="md" className="max-w-full" />
-            {user && <p className="text-xs text-slate-400">{user.username}</p>}
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center shrink-0">
-              <Package className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
+        <div className="space-y-3">
+          {companyLogo && !logoFailed ? (
+            <CompanyLogo
+              src={companyLogo}
+              size="md"
+              className="max-w-full"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center shrink-0">
+                <Package className="w-5 h-5 text-white" />
+              </div>
               <h1 className="font-bold text-slate-900 text-sm leading-tight">{t('appName')}</h1>
-              {user && <p className="text-xs text-slate-400 mt-0.5">{user.username}</p>}
             </div>
-          </div>
-        )}
+          )}
+          {user && <p className="text-xs text-slate-400">{user.username}</p>}
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

@@ -7,14 +7,44 @@ import { Button } from '@/components/ui/Button';
 import { Input, Select } from '@/components/ui/Input';
 import { useApp } from '@/contexts/AppContext';
 import { PERMISSIONS } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
 
-const REPORT_TYPES = [
-  { value: 'assets', label: 'assetsReport' },
-  { value: 'assignments', label: 'assignmentsReport' },
-  { value: 'transfers', label: 'transfersReport' },
-  { value: 'history', label: 'reportHistory' },
-  { value: 'depreciation', label: 'depreciationReport' },
+const REPORT_CATEGORIES = [
+  {
+    category: 'assetReports',
+    types: [
+      { value: 'assets', label: 'assetsReport' },
+      { value: 'unassigned', label: 'unassignedReport' },
+      { value: 'by_category', label: 'byCategoryReport' },
+      { value: 'by_manufacturer', label: 'byManufacturerReport' },
+      { value: 'by_status', label: 'byStatusReport' },
+      { value: 'maintenance', label: 'maintenanceReport' },
+    ],
+  },
+  {
+    category: 'organizationReports',
+    types: [
+      { value: 'by_department', label: 'byDepartmentReport' },
+      { value: 'by_branch', label: 'byBranchReport' },
+      { value: 'by_assignee', label: 'byAssigneeReport' },
+      { value: 'departments', label: 'departmentsReport' },
+      { value: 'branches', label: 'branchesReport' },
+      { value: 'persons', label: 'personsReport' },
+    ],
+  },
+  {
+    category: 'activityReports',
+    types: [
+      { value: 'assignments', label: 'assignmentsReport' },
+      { value: 'transfers', label: 'transfersReport' },
+      { value: 'history', label: 'reportHistory' },
+      { value: 'depreciation', label: 'depreciationReport' },
+      { value: 'imports', label: 'importsReport' },
+    ],
+  },
 ];
+
+const ALL_REPORT_TYPES = REPORT_CATEGORIES.flatMap((c) => c.types);
 
 export default function ReportsPage() {
   const { t, hasPermission, notify } = useApp();
@@ -36,7 +66,7 @@ export default function ReportsPage() {
     if (toDate) params.set('to', toDate);
 
     try {
-      const res = await fetch(`/api/reports?${params}`);
+      const res = await fetch(`/api/reports?${params}`, { cache: 'no-store' });
       const result = await res.json();
       if (res.ok) {
         setData(result.data || []);
@@ -70,6 +100,7 @@ export default function ReportsPage() {
   };
 
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
+  const selectedLabel = ALL_REPORT_TYPES.find((r) => r.value === reportType)?.label || reportType;
 
   return (
     <AppLayout>
@@ -79,13 +110,35 @@ export default function ReportsPage() {
           <p className="page-subtitle">{t('generate')}</p>
         </div>
 
+        {REPORT_CATEGORIES.map((group) => (
+          <div key={group.category} className="space-y-3">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">{t(group.category)}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {group.types.map((report) => (
+                <button
+                  key={report.value}
+                  type="button"
+                  onClick={() => { setReportType(report.value); setGenerated(false); }}
+                  className={cn(
+                    'premium-card p-4 text-left transition-all',
+                    reportType === report.value && 'ring-2 ring-lotus-500 border-lotus-200'
+                  )}
+                >
+                  <p className="font-medium text-slate-900">{t(report.label)}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
         <div className="premium-card p-6">
+          <h3 className="font-semibold text-slate-900 mb-4">{t(selectedLabel)}</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <Select
               label={t('reportType')}
-              options={REPORT_TYPES.map((r) => ({ value: r.value, label: t(r.label) }))}
+              options={ALL_REPORT_TYPES.map((r) => ({ value: r.value, label: t(r.label) }))}
               value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
+              onChange={(e) => { setReportType(e.target.value); setGenerated(false); }}
             />
             <Input label={t('fromDate')} type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
             <Input label={t('toDate')} type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
@@ -121,10 +174,10 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {data.slice(0, 100).map((row, i) => (
+                    {data.slice(0, 200).map((row, i) => (
                       <tr key={i} className="hover:bg-slate-50/50">
                         {columns.map((col) => (
-                          <td key={col} className="table-cell">{String(row[col] ?? '')}</td>
+                          <td key={col} className="table-cell whitespace-nowrap">{String(row[col] ?? '')}</td>
                         ))}
                       </tr>
                     ))}

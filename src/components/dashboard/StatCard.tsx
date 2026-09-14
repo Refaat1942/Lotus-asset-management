@@ -21,17 +21,15 @@ const colorMap = {
 
 export function StatCard({ title, value, icon: Icon, trend, color = 'green' }: StatCardProps) {
   return (
-    <div className="stat-card group">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
-          {trend && <p className="text-xs text-slate-400 mt-2">{trend}</p>}
-        </div>
-        <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', colorMap[color])}>
-          <Icon className="w-6 h-6" />
+    <div className="stat-card group min-w-0">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <p className="text-sm font-medium text-slate-500 leading-snug">{title}</p>
+        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', colorMap[color])}>
+          <Icon className="w-5 h-5" />
         </div>
       </div>
+      <p className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight break-words">{value}</p>
+      {trend && <p className="text-xs text-slate-400 mt-2">{trend}</p>}
     </div>
   );
 }

@@ -15,7 +15,7 @@ export async function GET() {
     return NextResponse.json({
       companyName: settingsMap.company_name || 'Lotus Asset Management',
       companyNameAr: settingsMap.company_name_ar || 'نظام إدارة أصول لوتس',
-      logo: settingsMap.company_logo || null,
+      logo: settingsMap.company_logo ? '/api/settings/logo' : null,
       lastBackup: settingsMap.last_backup || null,
       lastBackupFile: settingsMap.last_backup_file || null,
       backupDir: getBackupDir(),
@@ -73,14 +73,14 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     fs.writeFileSync(filePath, buffer);
 
-    const logoUrl = `/uploads/${fileName}`;
+    const logoPath = `/uploads/${fileName}`;
     await prisma.systemSetting.upsert({
       where: { key: 'company_logo' },
-      update: { value: logoUrl },
-      create: { key: 'company_logo', value: logoUrl },
+      update: { value: logoPath },
+      create: { key: 'company_logo', value: logoPath },
     });
 
-    return NextResponse.json({ logo: logoUrl });
+    return NextResponse.json({ logo: '/api/settings/logo' });
   } catch {
     return NextResponse.json({ error: 'Failed to upload logo' }, { status: 500 });
   }

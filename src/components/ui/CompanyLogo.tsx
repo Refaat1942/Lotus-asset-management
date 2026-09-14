@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 type CompanyLogoSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -17,6 +18,7 @@ interface CompanyLogoProps {
   size?: CompanyLogoSize;
   className?: string;
   framed?: boolean;
+  onError?: () => void;
 }
 
 export function CompanyLogo({
@@ -25,11 +27,22 @@ export function CompanyLogo({
   size = 'md',
   className,
   framed = false,
+  onError,
 }: CompanyLogoProps) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    onError?.();
+    return null;
+  }
+
+  const logoSrc = src.startsWith('/api/') ? src : src.startsWith('/uploads/') ? '/api/settings/logo' : src;
+
   return (
     <img
-      src={src}
+      src={logoSrc}
       alt={alt}
+      onError={() => setFailed(true)}
       className={cn(
         'w-auto object-contain object-left',
         sizeClasses[size],

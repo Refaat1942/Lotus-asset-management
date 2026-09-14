@@ -95,7 +95,7 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-5">
           <StatCard title={t('totalAssets')} value={data?.totalAssets || 0} icon={Package} color="green" />
           <StatCard title={t('assignedAssets')} value={data?.assignedAssets || 0} icon={UserCheck} color="blue" />
           <StatCard title={t('unassignedAssets')} value={data?.unassignedAssets || 0} icon={UserX} color="amber" />
