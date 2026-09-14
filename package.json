@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 16435",
+    "dev": "next dev -p 16345",
     "build": "next build",
-    "start": "next start -p 16435",
+    "start": "next start -p 16345",
+    "deploy:pm2": "pm2 start ecosystem.config.js",
+    "deploy:restart": "pm2 restart lotus-asset-management",
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

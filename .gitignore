@@ -16,6 +16,7 @@ dist/
 
 # Database
 backups/
+logs/
 
 # Uploads (keep directory, ignore contents except .gitkeep)
 public/uploads/*

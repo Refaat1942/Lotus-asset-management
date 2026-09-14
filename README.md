@@ -33,7 +33,7 @@ Professional web-based Asset Management System with Arabic/English support, Post
    ```
    DATABASE_URL="postgresql://postgres:password@localhost:5432/lotus_assets?schema=public"
    JWT_SECRET="your-secret-key"
-   PORT=16435
+   PORT=16345
    ```
 
 3. **Create database and run migrations**:
@@ -50,7 +50,25 @@ Professional web-based Asset Management System with Arabic/English support, Post
    npm run dev
    ```
 
-   Access at: http://localhost:16435
+   Access at: http://localhost:16345
+
+## VPS Deployment
+
+Deploy on a Linux VPS on **port 16345**:
+
+```bash
+git clone https://github.com/Refaat1942/Lotus-asset-management.git /var/www/lotus-asset-management
+cd /var/www/lotus-asset-management
+chmod +x deploy/install.sh
+sudo ./deploy/install.sh
+```
+
+See [deploy/DEPLOY.md](deploy/DEPLOY.md) for full deployment guide.
+
+Quick update after changes:
+```bash
+./deploy/update.sh
+```
 
 ## Default Login
 
@@ -59,7 +77,7 @@ Professional web-based Asset Management System with Arabic/English support, Post
 
 ## Port
 
-The application runs on **port 16435** by default.
+The application runs on **port 16345** by default.
 
 ## Excel Import
 
