@@ -9,6 +9,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import { PERMISSIONS } from '@/lib/permissions';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard', permission: null },
@@ -40,19 +41,22 @@ export function Sidebar() {
     <aside className="fixed top-0 bottom-0 w-64 bg-white border-e border-slate-100 flex flex-col z-40"
       style={{ insetInlineStart: 0 }}>
       <div className="p-6 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          {companyLogo ? (
-            <img src={companyLogo} alt="Logo" className="w-10 h-10 rounded-xl object-contain" />
-          ) : (
-            <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center">
+        {companyLogo ? (
+          <div className="space-y-3">
+            <CompanyLogo src={companyLogo} size="md" className="max-w-full" />
+            {user && <p className="text-xs text-slate-400">{user.username}</p>}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center shrink-0">
               <Package className="w-5 h-5 text-white" />
             </div>
-          )}
-          <div>
-            <h1 className="font-bold text-slate-900 text-sm leading-tight">{t('appName')}</h1>
-            {user && <p className="text-xs text-slate-400 mt-0.5">{user.username}</p>}
+            <div className="min-w-0">
+              <h1 className="font-bold text-slate-900 text-sm leading-tight">{t('appName')}</h1>
+              {user && <p className="text-xs text-slate-400 mt-0.5">{user.username}</p>}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">

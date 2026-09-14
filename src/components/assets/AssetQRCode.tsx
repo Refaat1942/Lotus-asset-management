@@ -83,7 +83,7 @@ export function AssetQRCode({ assetId, assetCode, assetName, department, branch 
 
       <div ref={printRef}>
         <div className="label border-2 border-lotus-200 rounded-xl p-6 text-center mx-auto max-w-[280px]">
-          {companyLogo && <img src={companyLogo} alt="Logo" className="logo max-w-[80px] max-h-[40px] mx-auto mb-3 object-contain" />}
+          {companyLogo && <img src={companyLogo} alt="Logo" className="logo h-10 w-auto max-w-[160px] mx-auto mb-3 object-contain" />}
           <div className="qr">
             <img src={qrDataUrl} alt="QR Code" className="w-[180px] h-[180px] mx-auto" />
           </div>

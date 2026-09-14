@@ -6,6 +6,7 @@ import { Package, Globe } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -59,7 +60,7 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           {companyLogo ? (
-            <img src={companyLogo} alt="Logo" className="w-20 h-20 rounded-2xl object-contain mb-8 bg-white/10 p-2" />
+            <CompanyLogo src={companyLogo} size="xl" className="mb-8 brightness-0 invert" />
           ) : (
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mb-8">
               <Package className="w-10 h-10" />
