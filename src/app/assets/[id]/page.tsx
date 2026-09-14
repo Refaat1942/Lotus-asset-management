@@ -245,7 +245,6 @@ export default function AssetDetailPage() {
 
           <div className="space-y-6">
             <AssetQRCode
-              assetId={id}
               assetCode={asset.assetCode as string}
               assetName={asset.name as string}
               department={dept?.name}

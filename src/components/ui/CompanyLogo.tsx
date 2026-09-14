@@ -9,7 +9,7 @@ const sizeClasses: Record<CompanyLogoSize, string> = {
   sm: 'h-8 w-auto max-w-[120px] object-contain',
   md: 'h-12 w-auto max-w-[180px] object-contain',
   lg: 'h-16 w-auto max-w-[240px] object-contain',
-  hero: 'w-full h-auto max-h-[120px] object-contain object-center',
+  hero: 'h-[280px] w-auto max-w-[560px] object-contain object-left',
   sidebar: 'w-full h-auto max-h-[80px] object-contain object-center',
   card: 'w-full h-auto max-h-[100px] object-contain object-center',
 };

@@ -6,7 +6,7 @@ import { Globe } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { LogoBrand } from '@/components/ui/LogoBrand';
+import { CompanyLogo } from '@/components/ui/CompanyLogo';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -63,15 +63,18 @@ export default function LoginPage() {
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-gold-400 rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20 text-white w-full">
-          <LogoBrand
-            logo={companyLogo}
-            appName={t('appName')}
-            tagline={tagline}
-            variant="hero"
-          />
-          {!companyLogo && (
+          {companyLogo ? (
             <>
-              <h1 className="text-4xl font-bold mt-6 mb-4">{t('appName')}</h1>
+              <CompanyLogo
+                src={companyLogo}
+                size="hero"
+                className="mix-blend-multiply drop-shadow-sm"
+              />
+              <p className="mt-10 text-lg text-white/90 leading-relaxed max-w-md">{tagline}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-4xl font-bold mb-4">{t('appName')}</h1>
               <p className="text-lg text-white/80 max-w-md leading-relaxed">{tagline}</p>
             </>
           )}
@@ -88,8 +91,8 @@ export default function LoginPage() {
           </div>
 
           {companyLogo && (
-            <div className="mb-6 lg:hidden">
-              <LogoBrand logo={companyLogo} appName={t('appName')} variant="card" />
+            <div className="mb-8 lg:hidden flex justify-center">
+              <CompanyLogo src={companyLogo} size="lg" className="!h-28 !max-w-[320px]" />
             </div>
           )}
 

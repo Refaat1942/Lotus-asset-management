@@ -14,8 +14,8 @@ const KNOWLEDGE: KnowledgeEntry[] = [
   },
   {
     keywords: ['qr', 'qrcode', 'scan', 'barcode', 'print', 'رمز', 'مسح', 'طباعة'],
-    en: 'QR codes are **secured**: scanning shows only the asset code, not passwords or employee data. Open an asset → print the QR label. Only logged-in users can see full details inside the system.',
-    ar: 'رموز QR **محمية**: عند المسح يظهر كود الأصل فقط بدون كلمات مرور أو بيانات موظفين. افتح الأصل → اطبع ملصق QR. التفاصيل الكاملة متاحة فقط للمستخدمين المسجّلين.',
+    en: 'QR codes are **secured**: scanning opens the **login page only** with no asset information shown. Print labels from the asset page; staff must log in to view details.',
+    ar: 'رموز QR **محمية**: المسح يفتح **صفحة تسجيل الدخول فقط** بدون عرض أي بيانات عن الأصل. اطبع الملصق من صفحة الأصل؛ يجب تسجيل الدخول لعرض التفاصيل.',
   },
   {
     keywords: ['report', 'export', 'تقرير', 'تقارير', 'تصدير'],

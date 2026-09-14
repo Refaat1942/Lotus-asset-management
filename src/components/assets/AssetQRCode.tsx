@@ -5,38 +5,28 @@ import QRCode from 'qrcode';
 import { Printer, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useApp } from '@/contexts/AppContext';
-import { getSecureScanUrl } from '@/lib/qr-url';
+import { getLoginUrl } from '@/lib/qr-url';
 
 interface AssetQRCodeProps {
-  assetId: string;
   assetCode: string;
   assetName: string;
   department?: string;
   branch?: string;
 }
 
-export function AssetQRCode({ assetId, assetCode, assetName, department, branch }: AssetQRCodeProps) {
+export function AssetQRCode({ assetCode, assetName, department, branch }: AssetQRCodeProps) {
   const { t, companyLogo, locale } = useApp();
   const [qrDataUrl, setQrDataUrl] = useState('');
-  const [scanUrl, setScanUrl] = useState('');
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`/api/assets/${assetId}/qr`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        if (!data?.qrToken) return;
-        const url = getSecureScanUrl(window.location.origin, data.qrToken);
-        setScanUrl(url);
-        return QRCode.toDataURL(url, {
-          width: 200,
-          margin: 2,
-          color: { dark: '#2d6853', light: '#ffffff' },
-        });
-      })
-      .then((dataUrl) => { if (dataUrl) setQrDataUrl(dataUrl); })
-      .catch(() => {});
-  }, [assetId]);
+    const url = getLoginUrl(window.location.origin);
+    QRCode.toDataURL(url, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#2d6853', light: '#ffffff' },
+    }).then(setQrDataUrl).catch(() => {});
+  }, []);
 
   const handlePrint = () => {
     const printContent = printRef.current;
@@ -78,8 +68,8 @@ export function AssetQRCode({ assetId, assetCode, assetName, department, branch 
   if (!qrDataUrl) return null;
 
   const secureNote = locale === 'ar'
-    ? 'رمز محمي — لا يعرض بيانات حساسة عند المسح'
-    : 'Secured — no sensitive data when scanned';
+    ? 'المسح يفتح صفحة تسجيل الدخول فقط — بدون أي بيانات'
+    : 'Scan opens login only — no data exposed';
 
   return (
     <div className="premium-card p-6">
@@ -109,9 +99,6 @@ export function AssetQRCode({ assetId, assetCode, assetName, department, branch 
           <p className="brand text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-100">{t('appName')}</p>
         </div>
       </div>
-      {scanUrl && (
-        <p className="text-[10px] text-slate-400 mt-3 break-all text-center">{scanUrl}</p>
-      )}
     </div>
   );
 }

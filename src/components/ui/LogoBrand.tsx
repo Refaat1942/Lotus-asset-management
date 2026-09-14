@@ -27,18 +27,21 @@ export function LogoBrand({
 
   if (variant === 'hero') {
     return (
-      <div className={cn('w-full max-w-md', className)}>
+      <div className={cn('w-full', className)}>
         {showLogo ? (
-          <div className="bg-white rounded-2xl px-8 py-7 shadow-2xl shadow-black/10">
-            <CompanyLogo src={logo} size="hero" onError={onLogoError} />
-          </div>
+          <CompanyLogo
+            src={logo}
+            size="hero"
+            onError={onLogoError}
+            className="mix-blend-multiply drop-shadow-sm"
+          />
         ) : (
           <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center">
             <Package className="w-10 h-10 text-white" />
           </div>
         )}
         {tagline && (
-          <p className="mt-8 text-lg text-white/90 leading-relaxed max-w-md">{tagline}</p>
+          <p className="mt-10 text-lg text-white/90 leading-relaxed max-w-md">{tagline}</p>
         )}
       </div>
     );
