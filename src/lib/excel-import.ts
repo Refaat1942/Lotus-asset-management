@@ -98,7 +98,22 @@ function isLotusItemsFormat(headers: string[]): boolean {
 
 export function detectColumns(headers: string[]): ColumnMapping[] {
   if (isLotusItemsFormat(headers)) {
-    return LOTUS_ITEMS_MAPPING.filter((m) => headers.includes(m.excelColumn));
+    const mapped = LOTUS_ITEMS_MAPPING.filter((m) => headers.includes(m.excelColumn));
+    const mappedColumns = new Set(mapped.map((m) => m.excelColumn));
+
+    for (const header of headers) {
+      if (mappedColumns.has(header)) continue;
+      const normalized = normalizeHeader(header);
+      for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
+        if (aliases.some((alias) => normalized === alias || normalized.includes(alias))) {
+          mapped.push({ excelColumn: header, systemField: field });
+          mappedColumns.add(header);
+          break;
+        }
+      }
+    }
+
+    return mapped;
   }
 
   const mappings: ColumnMapping[] = [];
@@ -138,7 +153,7 @@ export function isLotusTemplate(headers: string[]): boolean {
 
 export function readExcelFile(buffer: ArrayBuffer): { headers: string[]; rows: Record<string, unknown>[] } {
   const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
-  const sheetName = workbook.SheetNames[0];
+  const sheetName = workbook.SheetNames.find((name) => name.toLowerCase() === 'all') || workbook.SheetNames[0];
   const sheet = workbook.Sheets[sheetName];
   const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
 
@@ -235,13 +250,24 @@ async function findOrCreatePerson(name: string, employeeId?: string, departmentI
 
 function buildNotes(row: Record<string, unknown>, mappings: ColumnMapping[]): string | undefined {
   const parts: string[] = [];
-  const notes = getMappedValue(row, mappings, 'notes');
-  if (notes) parts.push(String(notes));
-  // Lotus sheet: append Start-up date if present and not mapped elsewhere
+  const noteMappings = mappings.filter((m) => m.systemField === 'notes');
+  if (noteMappings.length > 0) {
+    for (const mapping of noteMappings) {
+      const value = row[mapping.excelColumn];
+      if (value !== '' && value !== null && value !== undefined) {
+        parts.push(`${mapping.excelColumn}: ${String(value)}`);
+      }
+    }
+  } else {
+    const notes = getMappedValue(row, mappings, 'notes');
+    if (notes) parts.push(String(notes));
+  }
+
   if (row['Start-up date'] && !mappings.find((m) => m.excelColumn === 'Start-up date')) {
     const d = parseDate(row['Start-up date']);
     if (d) parts.push(`Start-up: ${d.toISOString().split('T')[0]}`);
   }
+
   return parts.length ? parts.join(' | ') : undefined;
 }
 

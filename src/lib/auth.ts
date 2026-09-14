@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 import { PermissionKey } from './permissions';
-import { createOpenAccessUser } from './guest-user';
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'lotus-asset-management-dev-secret-change-in-production'
@@ -60,35 +59,11 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
   }
 }
 
-let openAccessUserCache: SessionUser | null = null;
-
-export async function getOpenAccessUser(): Promise<SessionUser> {
-  if (openAccessUserCache) return openAccessUserCache;
-
-  const user = await prisma.user.findFirst({
-    where: { isActive: true, username: 'admin' },
-    include: { role: true },
-  }) ?? await prisma.user.findFirst({
-    where: { isActive: true },
-    include: { role: true },
-    orderBy: { createdAt: 'asc' },
-  });
-
-  openAccessUserCache = createOpenAccessUser(
-    user
-      ? {
-          id: user.id,
-          roleId: user.roleId,
-          roleName: user.role.name,
-        }
-      : {}
-  );
-
-  return openAccessUserCache;
-}
-
 export async function getSession(): Promise<SessionUser | null> {
-  return getOpenAccessUser();
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  return verifyToken(token);
 }
 
 export async function getUserWithPermissions(userId: string): Promise<SessionUser | null> {
@@ -146,8 +121,13 @@ export async function authenticateUser(username: string, password: string): Prom
   };
 }
 
-export function checkPermission(_user: SessionUser | null, _permission: PermissionKey): boolean {
-  return true;
+export function checkPermission(user: SessionUser | null, permission: PermissionKey): boolean {
+  if (!user) return false;
+  return user.permissions.includes(permission);
+}
+
+export function useSecureCookies(): boolean {
+  return process.env.COOKIE_SECURE === 'true';
 }
 
 export { COOKIE_NAME };

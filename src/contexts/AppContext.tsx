@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Locale, t, getDirection } from '@/lib/i18n';
-import { ALL_PERMISSIONS } from '@/lib/guest-user';
 
 interface User {
   id: string;
@@ -31,18 +30,9 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const OPEN_ACCESS_USER: User = {
-  id: 'system',
-  username: 'System',
-  roleId: 'open-access',
-  roleName: 'Open Access',
-  permissions: ALL_PERMISSIONS,
-  canChangeUsername: false,
-};
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('en');
-  const [user, setUser] = useState<User | null>(OPEN_ACCESS_USER);
+  const [user, setUser] = useState<User | null>(null);
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -65,10 +55,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const translate = useCallback((key: string) => t(locale, key), [locale]);
 
-  const hasPermission = useCallback(() => true, []);
+  const hasPermission = useCallback(
+    (permission: string) => {
+      if (!user) return false;
+      return user.permissions.includes(permission);
+    },
+    [user]
+  );
 
   const refreshUser = useCallback(async () => {
-    setUser(OPEN_ACCESS_USER);
+    try {
+      const res = await fetch('/api/auth/me');
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch {
+      setUser(null);
+    }
   }, []);
 
   const notify = useCallback((message: string, type: 'success' | 'error' = 'success') => {

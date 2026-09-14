@@ -3,26 +3,34 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Package, Building2, MapPin, UserCircle,
-  FileSpreadsheet, BarChart3, Settings, Globe,
+  LayoutDashboard, Package, Building2, MapPin, Users, UserCircle, Shield,
+  FileSpreadsheet, BarChart3, Settings, LogOut, Globe,
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
+import { PERMISSIONS } from '@/lib/permissions';
 
 const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard' },
-  { href: '/assets', icon: Package, label: 'assets' },
-  { href: '/persons', icon: UserCircle, label: 'persons' },
-  { href: '/departments', icon: Building2, label: 'departments' },
-  { href: '/branches', icon: MapPin, label: 'branches' },
-  { href: '/import', icon: FileSpreadsheet, label: 'import' },
-  { href: '/reports', icon: BarChart3, label: 'reports' },
-  { href: '/settings', icon: Settings, label: 'settings' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard', permission: null },
+  { href: '/assets', icon: Package, label: 'assets', permission: PERMISSIONS.VIEW_ASSETS },
+  { href: '/persons', icon: UserCircle, label: 'persons', permission: PERMISSIONS.VIEW_ASSETS },
+  { href: '/departments', icon: Building2, label: 'departments', permission: PERMISSIONS.MANAGE_DEPARTMENTS },
+  { href: '/branches', icon: MapPin, label: 'branches', permission: PERMISSIONS.MANAGE_BRANCHES },
+  { href: '/users', icon: Users, label: 'users', permission: PERMISSIONS.MANAGE_USERS },
+  { href: '/authorization', icon: Shield, label: 'authorization', permission: PERMISSIONS.MANAGE_AUTHORIZATION },
+  { href: '/import', icon: FileSpreadsheet, label: 'import', permission: PERMISSIONS.IMPORT_EXCEL },
+  { href: '/reports', icon: BarChart3, label: 'reports', permission: PERMISSIONS.VIEW_REPORTS },
+  { href: '/settings', icon: Settings, label: 'settings', permission: PERMISSIONS.MANAGE_SETTINGS },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { t, companyLogo, locale, setLocale } = useApp();
+  const { t, hasPermission, companyLogo, locale, setLocale, user } = useApp();
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login';
+  };
 
   const toggleLanguage = () => {
     setLocale(locale === 'en' ? 'ar' : 'en');
@@ -42,12 +50,14 @@ export function Sidebar() {
           )}
           <div>
             <h1 className="font-bold text-slate-900 text-sm leading-tight">{t('appName')}</h1>
+            {user && <p className="text-xs text-slate-400 mt-0.5">{user.username}</p>}
           </div>
         </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
+          if (item.permission && !hasPermission(item.permission)) return null;
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           return (
             <Link
@@ -62,10 +72,14 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-100">
+      <div className="p-4 border-t border-slate-100 space-y-1">
         <button onClick={toggleLanguage} className="nav-link w-full">
           <Globe className="w-5 h-5" />
           <span>{locale === 'en' ? t('arabic') : t('english')}</span>
+        </button>
+        <button onClick={handleLogout} className="nav-link w-full text-red-600 hover:bg-red-50 hover:text-red-700">
+          <LogOut className="w-5 h-5" />
+          <span>{t('logout')}</span>
         </button>
       </div>
     </aside>

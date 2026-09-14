@@ -72,9 +72,12 @@ export default function ImportPage() {
 
   const updateMapping = (excelColumn: string, systemField: string) => {
     setMappings((prev) => {
-      const filtered = prev.filter((m) => m.excelColumn !== excelColumn && m.systemField !== systemField);
-      if (systemField) filtered.push({ excelColumn, systemField });
-      return filtered;
+      const filtered = prev.filter((m) => m.excelColumn !== excelColumn);
+      if (!systemField) return filtered;
+      if (systemField === 'notes') {
+        return [...filtered, { excelColumn, systemField }];
+      }
+      return [...filtered.filter((m) => m.systemField !== systemField), { excelColumn, systemField }];
     });
   };
 
@@ -131,9 +134,15 @@ export default function ImportPage() {
         {step === 'mapping' && (
           <div className="space-y-6">
             {isLotusTemplate && (
-              <div className="premium-card p-4 bg-lotus-50 border-lotus-200">
-                <p className="text-sm text-lotus-800 font-medium">{t('lotusTemplateDetected')}</p>
-                <p className="text-xs text-lotus-600 mt-1">{t('lotusTemplateHint')}</p>
+              <div className="premium-card p-4 bg-lotus-50 border-lotus-200 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-lotus-800 font-medium">{t('lotusTemplateDetected')}</p>
+                  <p className="text-xs text-lotus-600 mt-1">{t('lotusTemplateHint')}</p>
+                  <p className="text-xs text-lotus-700 mt-2">{headers.length} columns detected, {mappings.length} mapped automatically</p>
+                </div>
+                <Button onClick={handleImport} loading={loading}>
+                  {t('startImport')} ({totalRows} rows)
+                </Button>
               </div>
             )}
 

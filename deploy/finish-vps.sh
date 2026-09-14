@@ -22,6 +22,7 @@ fi
 # Force PORT=16345 in .env
 grep -q "^PORT=" .env && sed -i "s/^PORT=.*/PORT=${APP_PORT}/" .env || echo "PORT=${APP_PORT}" >> .env
 grep -q "^NODE_ENV=" .env && sed -i 's/^NODE_ENV=.*/NODE_ENV=production/' .env || echo "NODE_ENV=production" >> .env
+grep -q "^COOKIE_SECURE=" .env && sed -i 's/^COOKIE_SECURE=.*/COOKIE_SECURE=false/' .env || echo "COOKIE_SECURE=false" >> .env
 
 echo "[1/6] Installing dependencies..."
 npm ci
