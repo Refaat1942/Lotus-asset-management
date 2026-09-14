@@ -60,7 +60,9 @@ export default function LoginPage() {
         </div>
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           {companyLogo ? (
-            <CompanyLogo src={companyLogo} size="xl" className="mb-8 brightness-0 invert" />
+            <div className="mb-8 inline-flex rounded-2xl bg-white p-4 shadow-sm">
+              <CompanyLogo src={companyLogo} size="xl" />
+            </div>
           ) : (
             <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mb-8">
               <Package className="w-10 h-10" />
