@@ -165,6 +165,11 @@ export const translations = {
     roleDeleted: 'Role deleted successfully',
     assetDeleted: 'Asset deleted successfully',
     editAsset: 'Edit Asset',
+    lotusTemplateDetected: 'Lotus-Items.xlsx template detected — columns auto-mapped',
+    lotusTemplateHint: 'Edit the Excel file and re-upload. Use "Create or Update" mode to bulk refresh existing records.',
+    importModeUpsert: 'Create or Update (recommended)',
+    importModeCreate: 'Create new only (skip duplicates)',
+    importModeUpdate: 'Update existing only',
     statuses: {
       AVAILABLE: 'Available',
       ASSIGNED: 'Assigned',
@@ -357,6 +362,11 @@ export const translations = {
     roleDeleted: 'تم حذف الدور بنجاح',
     assetDeleted: 'تم حذف الأصل بنجاح',
     editAsset: 'تعديل الأصل',
+    lotusTemplateDetected: 'تم اكتشاف قالب Lotus-Items.xlsx — تم ربط الأعمدة تلقائياً',
+    lotusTemplateHint: 'عدّل ملف Excel وأعد رفعه. استخدم وضع "إنشاء أو تحديث" لتحديث السجلات الموجودة.',
+    importModeUpsert: 'إنشاء أو تحديث (موصى به)',
+    importModeCreate: 'إنشاء جديد فقط (تخطي المكرر)',
+    importModeUpdate: 'تحديث الموجود فقط',
     statuses: {
       AVAILABLE: 'متاح',
       ASSIGNED: 'مخصص',

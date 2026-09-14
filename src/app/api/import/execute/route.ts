@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/lib/api-auth';
 import { PERMISSIONS } from '@/lib/permissions';
-import { readExcelFile, importAssetsFromExcel, ColumnMapping } from '@/lib/excel-import';
+import { readExcelFile, importAssetsFromExcel, ColumnMapping, ImportMode } from '@/lib/excel-import';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const mappingsJson = formData.get('mappings') as string;
+    const mode = (formData.get('mode') as ImportMode) || 'upsert';
 
     if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 });
 
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { rows } = readExcelFile(buffer);
     const mappings: ColumnMapping[] = mappingsJson ? JSON.parse(mappingsJson) : [];
 
-    const importResult = await importAssetsFromExcel(rows, mappings, result.user.id);
+    const importResult = await importAssetsFromExcel(rows, mappings, result.user.id, mode);
 
     await prisma.importLog.create({
       data: {

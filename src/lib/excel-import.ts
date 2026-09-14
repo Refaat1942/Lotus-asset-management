@@ -16,26 +16,44 @@ export interface ImportResult {
   failures: { row: number; reason: string; data?: Record<string, unknown> }[];
 }
 
+// Predefined mapping for Lotus-Items.xlsx (408 equipment records)
+export const LOTUS_ITEMS_MAPPING: ColumnMapping[] = [
+  { excelColumn: 'Equipment', systemField: 'assetCode' },
+  { excelColumn: 'Serial-Number', systemField: 'serialNumber' },
+  { excelColumn: 'Device-Work', systemField: 'assignee' },
+  { excelColumn: 'Description', systemField: 'name' },
+  { excelColumn: 'Manufacturer', systemField: 'manufacturer' },
+  { excelColumn: 'Model-Name', systemField: 'model' },
+  { excelColumn: 'AcquistnValue', systemField: 'purchasePrice' },
+  { excelColumn: 'Acquistion date', systemField: 'purchaseDate' },
+  { excelColumn: 'Device-Type', systemField: 'category' },
+  { excelColumn: 'Functional Loc.', systemField: 'branch' },
+  { excelColumn: 'Description_1', systemField: 'department' },
+  { excelColumn: 'Vendor-Name', systemField: 'notes' },
+];
+
 const FIELD_ALIASES: Record<string, string[]> = {
-  assetCode: ['asset code', 'asset id', 'asset number', 'code', 'id', 'رقم الأصل', 'كود الأصل', 'رقم الصنف', 'item code', 'item no', 'item number', 'no', 'number', '#'],
-  name: ['name', 'asset name', 'item name', 'description', 'اسم الأصل', 'الوصف', 'item', 'item description'],
+  assetCode: ['equipment', 'asset code', 'asset id', 'asset number', 'item code', 'item no', 'رقم الأصل', 'كود الأصل', 'رقم الصنف'],
+  name: ['description', 'name', 'asset name', 'item name', 'اسم الأصل', 'الوصف', 'item description'],
   nameAr: ['name ar', 'arabic name', 'الاسم بالعربي', 'اسم عربي'],
-  category: ['category', 'type', 'asset type', 'item type', 'الفئة', 'النوع', 'التصنيف'],
-  serialNumber: ['serial', 'serial number', 's/n', 'الرقم التسلسلي', 'serial no'],
-  model: ['model', 'الموديل', 'الطراز'],
+  category: ['device-type', 'category', 'type', 'asset type', 'item type', 'الفئة', 'النوع', 'التصنيف'],
+  serialNumber: ['serial-number', 'serial number', 'serial no', 's/n', 'الرقم التسلسلي'],
+  model: ['model-name', 'model', 'الموديل', 'الطراز'],
   manufacturer: ['manufacturer', 'brand', 'make', 'الشركة المصنعة', 'الماركة'],
-  department: ['department', 'dept', 'القسم', 'الإدارة'],
-  branch: ['branch', 'location', 'site', 'الفرع', 'الموقع'],
+  department: ['description_1', 'department', 'dept', 'القسم', 'الإدارة'],
+  branch: ['functional loc.', 'functional loc', 'functional location', 'branch', 'location', 'site', 'الفرع', 'الموقع'],
   status: ['status', 'الحالة'],
   condition: ['condition', 'الحالة الفنية', 'حالة الأصل'],
-  purchaseDate: ['purchase date', 'date purchased', 'تاريخ الشراء', 'purchase', 'date'],
-  purchasePrice: ['purchase price', 'cost', 'price', 'سعر الشراء', 'التكلفة', 'القيمة'],
-  currentValue: ['current value', 'value', 'book value', 'القيمة الحالية', 'القيمة الدفترية'],
-  depreciationRate: ['depreciation', 'depreciation rate', 'dep rate', 'نسبة الإهلاك', 'الإهلاك'],
-  notes: ['notes', 'remarks', 'comments', 'ملاحظات', 'تعليقات'],
-  assignee: ['assignee', 'assigned to', 'employee', 'holder', 'المسؤول', 'الموظف', 'المستخدم'],
+  purchaseDate: ['acquistion date', 'acquisition date', 'purchase date', 'date purchased', 'تاريخ الشراء', 'start-up date'],
+  purchasePrice: ['acquistnvalue', 'acquisition value', 'purchase price', 'cost', 'سعر الشراء', 'التكلفة'],
+  currentValue: ['current value', 'book value', 'القيمة الحالية', 'القيمة الدفترية'],
+  depreciationRate: ['depreciation rate', 'dep rate', 'نسبة الإهلاك'],
+  notes: ['vendor-name', 'device-work', 'notes', 'remarks', 'comments', 'ملاحظات', 'تعليقات'],
+  assignee: ['device-work', 'assignee', 'assigned to', 'employee', 'holder', 'المسؤول', 'الموظف', 'المستخدم'],
   employeeId: ['employee id', 'emp id', 'staff id', 'رقم الموظف'],
 };
+
+export type ImportMode = 'create' | 'update' | 'upsert';
 
 const STATUS_MAP: Record<string, AssetStatus> = {
   available: 'AVAILABLE',
@@ -73,23 +91,49 @@ function normalizeHeader(header: string): string {
   return header.toString().trim().toLowerCase();
 }
 
+function isLotusItemsFormat(headers: string[]): boolean {
+  const required = ['Equipment', 'Serial-Number', 'Description', 'Device-Type'];
+  return required.every((col) => headers.includes(col));
+}
+
 export function detectColumns(headers: string[]): ColumnMapping[] {
+  if (isLotusItemsFormat(headers)) {
+    return LOTUS_ITEMS_MAPPING.filter((m) => headers.includes(m.excelColumn));
+  }
+
   const mappings: ColumnMapping[] = [];
   const usedFields = new Set<string>();
 
   for (const header of headers) {
     const normalized = normalizeHeader(header);
+    let bestMatch: { field: string; score: number } | null = null;
+
     for (const [field, aliases] of Object.entries(FIELD_ALIASES)) {
       if (usedFields.has(field)) continue;
-      if (aliases.some((alias) => normalized === alias || normalized.includes(alias))) {
-        mappings.push({ excelColumn: header, systemField: field });
-        usedFields.add(field);
-        break;
+      for (const alias of aliases) {
+        let score = 0;
+        if (normalized === alias) score = 100;
+        else if (normalized.replace(/[_\s-]/g, '') === alias.replace(/[_\s-]/g, '')) score = 90;
+        else if (normalized.startsWith(alias) || normalized.endsWith(alias)) score = 70;
+        else if (normalized.includes(alias) && alias.length >= 4) score = 50;
+
+        if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+          bestMatch = { field, score };
+        }
       }
+    }
+
+    if (bestMatch && bestMatch.score >= 50) {
+      mappings.push({ excelColumn: header, systemField: bestMatch.field });
+      usedFields.add(bestMatch.field);
     }
   }
 
   return mappings;
+}
+
+export function isLotusTemplate(headers: string[]): boolean {
+  return isLotusItemsFormat(headers);
 }
 
 export function readExcelFile(buffer: ArrayBuffer): { headers: string[]; rows: Record<string, unknown>[] } {
@@ -189,10 +233,60 @@ async function findOrCreatePerson(name: string, employeeId?: string, departmentI
   return person.id;
 }
 
+function buildNotes(row: Record<string, unknown>, mappings: ColumnMapping[]): string | undefined {
+  const parts: string[] = [];
+  const notes = getMappedValue(row, mappings, 'notes');
+  if (notes) parts.push(String(notes));
+  // Lotus sheet: append Start-up date if present and not mapped elsewhere
+  if (row['Start-up date'] && !mappings.find((m) => m.excelColumn === 'Start-up date')) {
+    const d = parseDate(row['Start-up date']);
+    if (d) parts.push(`Start-up: ${d.toISOString().split('T')[0]}`);
+  }
+  return parts.length ? parts.join(' | ') : undefined;
+}
+
+function buildAssetFields(
+  row: Record<string, unknown>,
+  mappings: ColumnMapping[],
+  finalCode: string,
+  finalName: string,
+  departmentId?: string,
+  branchId?: string,
+  currentAssigneeId?: string
+) {
+  const purchasePrice = parseNumber(getMappedValue(row, mappings, 'purchasePrice'));
+  const currentValue = parseNumber(getMappedValue(row, mappings, 'currentValue')) ?? purchasePrice;
+  const assigneeName = getMappedValue(row, mappings, 'assignee');
+  const status = parseStatus(getMappedValue(row, mappings, 'status'));
+  const finalStatus = currentAssigneeId || assigneeName ? 'ASSIGNED' : status;
+
+  return {
+    assetCode: finalCode,
+    name: finalName,
+    nameAr: getMappedValue(row, mappings, 'nameAr') ? String(getMappedValue(row, mappings, 'nameAr')) : undefined,
+    category: getMappedValue(row, mappings, 'category') ? String(getMappedValue(row, mappings, 'category')) : undefined,
+    serialNumber: getMappedValue(row, mappings, 'serialNumber') ? String(getMappedValue(row, mappings, 'serialNumber')) : undefined,
+    model: getMappedValue(row, mappings, 'model') ? String(getMappedValue(row, mappings, 'model')) : undefined,
+    manufacturer: getMappedValue(row, mappings, 'manufacturer') ? String(getMappedValue(row, mappings, 'manufacturer')) : undefined,
+    status: finalStatus,
+    condition: parseCondition(getMappedValue(row, mappings, 'condition')),
+    purchaseDate: parseDate(getMappedValue(row, mappings, 'purchaseDate')),
+    purchasePrice,
+    currentValue,
+    depreciationRate: parseNumber(getMappedValue(row, mappings, 'depreciationRate')),
+    notes: buildNotes(row, mappings),
+    departmentId: departmentId || null,
+    branchId: branchId || null,
+    currentAssigneeId: currentAssigneeId || null,
+    assigneeName: assigneeName ? String(assigneeName) : undefined,
+  };
+}
+
 export async function importAssetsFromExcel(
   rows: Record<string, unknown>[],
   mappings: ColumnMapping[],
-  userId: string
+  userId: string,
+  mode: ImportMode = 'upsert'
 ): Promise<ImportResult> {
   const result: ImportResult = {
     total: rows.length,
@@ -207,7 +301,7 @@ export async function importAssetsFromExcel(
     const rowNum = i + 2;
 
     try {
-      const assetCode = String(getMappedValue(row, mappings, 'assetCode') || '').trim();
+      let assetCode = String(getMappedValue(row, mappings, 'assetCode') || '').trim();
       const name = String(getMappedValue(row, mappings, 'name') || '').trim();
 
       if (!assetCode && !name) {
@@ -218,13 +312,6 @@ export async function importAssetsFromExcel(
 
       const finalCode = assetCode || `AUTO-${Date.now()}-${i}`;
       const finalName = name || assetCode;
-
-      const existing = await prisma.asset.findUnique({ where: { assetCode: finalCode } });
-      if (existing) {
-        result.failed++;
-        result.failures.push({ row: rowNum, reason: `Duplicate asset code: ${finalCode}`, data: row as Record<string, unknown> });
-        continue;
-      }
 
       let departmentId: string | undefined;
       const deptName = getMappedValue(row, mappings, 'department');
@@ -245,30 +332,79 @@ export async function importAssetsFromExcel(
         );
       }
 
-      const status = parseStatus(getMappedValue(row, mappings, 'status'));
-      const finalStatus = currentAssigneeId ? 'ASSIGNED' : status;
+      const fields = buildAssetFields(row, mappings, finalCode, finalName, departmentId, branchId, currentAssigneeId);
+      const existing = await prisma.asset.findUnique({ where: { assetCode: finalCode } });
 
-      const assetData: Prisma.AssetCreateInput = {
-        assetCode: finalCode,
-        name: finalName,
-        nameAr: getMappedValue(row, mappings, 'nameAr') ? String(getMappedValue(row, mappings, 'nameAr')) : undefined,
-        category: getMappedValue(row, mappings, 'category') ? String(getMappedValue(row, mappings, 'category')) : undefined,
-        serialNumber: getMappedValue(row, mappings, 'serialNumber') ? String(getMappedValue(row, mappings, 'serialNumber')) : undefined,
-        model: getMappedValue(row, mappings, 'model') ? String(getMappedValue(row, mappings, 'model')) : undefined,
-        manufacturer: getMappedValue(row, mappings, 'manufacturer') ? String(getMappedValue(row, mappings, 'manufacturer')) : undefined,
-        status: finalStatus,
-        condition: parseCondition(getMappedValue(row, mappings, 'condition')),
-        purchaseDate: parseDate(getMappedValue(row, mappings, 'purchaseDate')),
-        purchasePrice: parseNumber(getMappedValue(row, mappings, 'purchasePrice')),
-        currentValue: parseNumber(getMappedValue(row, mappings, 'currentValue')),
-        depreciationRate: parseNumber(getMappedValue(row, mappings, 'depreciationRate')),
-        notes: getMappedValue(row, mappings, 'notes') ? String(getMappedValue(row, mappings, 'notes')) : undefined,
-        department: departmentId ? { connect: { id: departmentId } } : undefined,
-        branch: branchId ? { connect: { id: branchId } } : undefined,
-        currentAssignee: currentAssigneeId ? { connect: { id: currentAssigneeId } } : undefined,
-      };
+      if (existing && mode === 'create') {
+        result.failed++;
+        result.failures.push({ row: rowNum, reason: `Duplicate asset code: ${finalCode}`, data: row as Record<string, unknown> });
+        continue;
+      }
 
-      const asset = await prisma.asset.create({ data: assetData });
+      if (existing && (mode === 'update' || mode === 'upsert')) {
+        await prisma.asset.update({
+          where: { id: existing.id },
+          data: {
+            name: fields.name,
+            nameAr: fields.nameAr,
+            category: fields.category,
+            serialNumber: fields.serialNumber,
+            model: fields.model,
+            manufacturer: fields.manufacturer,
+            status: fields.status,
+            condition: fields.condition,
+            purchaseDate: fields.purchaseDate,
+            purchasePrice: fields.purchasePrice,
+            currentValue: fields.currentValue,
+            depreciationRate: fields.depreciationRate,
+            notes: fields.notes,
+            departmentId: fields.departmentId,
+            branchId: fields.branchId,
+            currentAssigneeId: fields.currentAssigneeId,
+          },
+        });
+
+        await recordAssetHistory({
+          assetId: existing.id,
+          eventType: 'UPDATED',
+          title: 'Asset updated from Excel import',
+          titleAr: 'تم تحديث الأصل من استيراد Excel',
+          description: `Bulk update for ${finalCode}`,
+          createdById: userId,
+        });
+
+        result.success++;
+        result.successes.push({ row: rowNum, assetCode: finalCode, name: finalName });
+        continue;
+      }
+
+      if (!existing && mode === 'update') {
+        result.failed++;
+        result.failures.push({ row: rowNum, reason: `Asset not found: ${finalCode}`, data: row as Record<string, unknown> });
+        continue;
+      }
+
+      const asset = await prisma.asset.create({
+        data: {
+          assetCode: fields.assetCode,
+          name: fields.name,
+          nameAr: fields.nameAr,
+          category: fields.category,
+          serialNumber: fields.serialNumber,
+          model: fields.model,
+          manufacturer: fields.manufacturer,
+          status: fields.status,
+          condition: fields.condition,
+          purchaseDate: fields.purchaseDate,
+          purchasePrice: fields.purchasePrice,
+          currentValue: fields.currentValue,
+          depreciationRate: fields.depreciationRate,
+          notes: fields.notes,
+          departmentId: fields.departmentId,
+          branchId: fields.branchId,
+          currentAssigneeId: fields.currentAssigneeId,
+        },
+      });
 
       await recordAssetHistory({
         assetId: asset.id,
@@ -279,11 +415,11 @@ export async function importAssetsFromExcel(
         createdById: userId,
       });
 
-      if (currentAssigneeId) {
+      if (fields.currentAssigneeId && fields.assigneeName) {
         await prisma.assetAssignment.create({
           data: {
             assetId: asset.id,
-            personId: currentAssigneeId,
+            personId: fields.currentAssigneeId,
             assignedById: userId,
             notes: 'Imported with assignment',
           },
@@ -291,8 +427,8 @@ export async function importAssetsFromExcel(
         await recordAssetHistory({
           assetId: asset.id,
           eventType: 'ASSIGNED',
-          title: `Assigned to ${assigneeName}`,
-          titleAr: `تم التعيين إلى ${assigneeName}`,
+          title: `Assigned to ${fields.assigneeName}`,
+          titleAr: `تم التعيين إلى ${fields.assigneeName}`,
           createdById: userId,
         });
       }

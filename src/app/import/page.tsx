@@ -34,6 +34,8 @@ export default function ImportPage() {
   const [step, setStep] = useState<'upload' | 'mapping' | 'results'>('upload');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [isLotusTemplate, setIsLotusTemplate] = useState(false);
+  const [importMode, setImportMode] = useState<'create' | 'update' | 'upsert'>('upsert');
 
   if (!hasPermission(PERMISSIONS.IMPORT_EXCEL)) {
     return <AppLayout><p className="text-center text-slate-500 py-16">{t('noPermission')}</p></AppLayout>;
@@ -56,6 +58,7 @@ export default function ImportPage() {
         setMappings(data.mappings);
         setPreview(data.preview);
         setTotalRows(data.totalRows);
+        setIsLotusTemplate(data.isLotusTemplate || false);
         setStep('mapping');
       } else {
         notify(data.error || t('error'), 'error');
@@ -82,6 +85,7 @@ export default function ImportPage() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('mappings', JSON.stringify(mappings));
+    formData.append('mode', importMode);
 
     try {
       const res = await fetch('/api/import/execute', { method: 'POST', body: formData });
@@ -126,10 +130,30 @@ export default function ImportPage() {
 
         {step === 'mapping' && (
           <div className="space-y-6">
+            {isLotusTemplate && (
+              <div className="premium-card p-4 bg-lotus-50 border-lotus-200">
+                <p className="text-sm text-lotus-800 font-medium">{t('lotusTemplateDetected')}</p>
+                <p className="text-xs text-lotus-600 mt-1">{t('lotusTemplateHint')}</p>
+              </div>
+            )}
+
             <div className="premium-card p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
                 <h3 className="font-semibold text-slate-900">{t('columnMapping')}</h3>
-                <span className="text-sm text-slate-500">{totalRows} rows detected</span>
+                <div className="flex items-center gap-4">
+                  <Select
+                    label=""
+                    options={[
+                      { value: 'upsert', label: t('importModeUpsert') },
+                      { value: 'create', label: t('importModeCreate') },
+                      { value: 'update', label: t('importModeUpdate') },
+                    ]}
+                    value={importMode}
+                    onChange={(e) => setImportMode(e.target.value as 'create' | 'update' | 'upsert')}
+                    className="w-48"
+                  />
+                  <span className="text-sm text-slate-500">{totalRows} rows</span>
+                </div>
               </div>
               <div className="space-y-3">
                 {headers.map((header) => {
