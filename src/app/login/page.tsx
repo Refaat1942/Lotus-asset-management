@@ -30,7 +30,11 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || t('invalidCredentials'));
+        if (res.status === 503) {
+          setError(data.error || 'Database not configured. Run scripts/setup-windows.ps1');
+        } else {
+          setError(data.error || t('invalidCredentials'));
+        }
         return;
       }
 

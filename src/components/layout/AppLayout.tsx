@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { NotificationToast } from '../ui/Notification';
@@ -11,17 +11,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const [checked, setChecked] = useState(false);
+
   useEffect(() => {
-    refreshUser();
+    refreshUser().finally(() => setChecked(true));
   }, [refreshUser]);
 
   useEffect(() => {
-    if (!user && pathname !== '/login') {
-      router.push('/login');
+    if (checked && !user && pathname !== '/login') {
+      router.replace('/login');
     }
-  }, [user, pathname, router]);
+  }, [user, pathname, router, checked]);
 
-  if (!user) {
+  if (!checked || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-lotus-500 border-t-transparent rounded-full" />

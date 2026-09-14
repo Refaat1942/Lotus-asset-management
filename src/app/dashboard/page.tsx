@@ -25,9 +25,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetch('/api/dashboard')
-      .then((r) => r.json())
-      .then(setData)
-      .catch(() => {})
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => setData(d))
+      .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
 
@@ -66,7 +66,7 @@ export default function DashboardPage() {
               <h3 className="font-semibold text-slate-900">{t('assetsByDepartment')}</h3>
             </div>
             <div className="space-y-3">
-              {data?.byDepartment.map((d) => (
+              {(data?.byDepartment ?? []).map((d) => (
                 <div key={d.name} className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">{locale === 'ar' ? d.nameAr : d.name}</span>
                   <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">{d.count}</span>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
               <h3 className="font-semibold text-slate-900">{t('assetsByBranch')}</h3>
             </div>
             <div className="space-y-3">
-              {data?.byBranch.map((b) => (
+              {(data?.byBranch ?? []).map((b) => (
                 <div key={b.name} className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">{locale === 'ar' ? b.nameAr : b.name}</span>
                   <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">{b.count}</span>
@@ -106,7 +106,7 @@ export default function DashboardPage() {
               <h3 className="font-semibold text-slate-900">{t('assetsByStatus')}</h3>
             </div>
             <div className="space-y-3">
-              {data?.byStatus.map((s) => (
+              {(data?.byStatus ?? []).map((s) => (
                 <div key={s.status} className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">{t(`statuses.${s.status}`)}</span>
                   <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">{s.count}</span>
