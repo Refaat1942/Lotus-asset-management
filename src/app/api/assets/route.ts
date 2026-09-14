@@ -27,6 +27,11 @@ export async function GET(request: NextRequest) {
         { name: { contains: search, mode: 'insensitive' } },
         { serialNumber: { contains: search, mode: 'insensitive' } },
         { category: { contains: search, mode: 'insensitive' } },
+        { device: { contains: search, mode: 'insensitive' } },
+        { operatingSystem: { contains: search, mode: 'insensitive' } },
+        { partNo: { contains: search, mode: 'insensitive' } },
+        { vendorName: { contains: search, mode: 'insensitive' } },
+        { ipAddress: { contains: search, mode: 'insensitive' } },
         { currentAssignee: { name: { contains: search, mode: 'insensitive' } } },
       ];
     }

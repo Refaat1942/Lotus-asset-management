@@ -140,6 +140,18 @@ model Asset {
   serialNumber      String?
   model             String?
   manufacturer      String?
+  device            String?
+  operatingSystem   String?
+  partNo            String?
+  employeePosition  String?
+  startupDate       DateTime?
+  site              String?
+  vendorName        String?
+  anyDeskUser       String?
+  passwordAnydesk   String?
+  userAdmin         String?
+  passwordAdmin     String?
+  ipAddress         String?
   departmentId      String?
   department        Department?          @relation(fields: [departmentId], references: [id])
   branchId          String?

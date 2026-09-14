@@ -143,7 +143,7 @@ export default function AssetDetailPage() {
 
   const dept = asset.department as { id?: string; name: string; nameAr?: string } | null;
   const branch = asset.branch as { id?: string; name: string; nameAr?: string } | null;
-  const assignee = asset.currentAssignee as { name: string; nameAr?: string } | null;
+  const assignee = asset.currentAssignee as { name: string; nameAr?: string; employeeId?: string } | null;
   const history = (asset.history as unknown[]) || [];
 
   return (
@@ -212,14 +212,43 @@ export default function AssetDetailPage() {
                 <InfoItem label={t('assetCode')} value={asset.assetCode as string} />
                 <InfoItem label={t('assetName')} value={asset.name as string} />
                 <InfoItem label={t('category')} value={(asset.category as string) || '-'} />
-                <InfoItem label={t('serialNumber')} value={(asset.serialNumber as string) || '-'} />
-                <InfoItem label={t('model')} value={(asset.model as string) || '-'} />
-                <InfoItem label={t('manufacturer')} value={(asset.manufacturer as string) || '-'} />
                 <InfoItem label={t('department')} value={dept ? (locale === 'ar' ? dept.nameAr || dept.name : dept.name) : '-'} />
                 <InfoItem label={t('branch')} value={branch ? (locale === 'ar' ? branch.nameAr || branch.name : branch.name) : '-'} />
+                <InfoItem label={t('site')} value={(asset.site as string) || '-'} />
                 <InfoItem label={t('currentHolder')} value={assignee?.name || '-'} />
+                <InfoItem label={t('employeeCode')} value={assignee?.employeeId || '-'} />
+                <InfoItem label={t('employeePosition')} value={(asset.employeePosition as string) || '-'} />
                 <InfoItem label={t('purchaseDate')} value={formatDate(asset.purchaseDate as string, locale)} />
+                <InfoItem label={t('startupDate')} value={formatDate(asset.startupDate as string, locale)} />
               </div>
+            </div>
+
+            <div className="premium-card p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">{t('deviceDetails')}</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <InfoItem label={t('device')} value={(asset.device as string) || '-'} />
+                <InfoItem label={t('serialNumber')} value={(asset.serialNumber as string) || '-'} />
+                <InfoItem label={t('operatingSystem')} value={(asset.operatingSystem as string) || '-'} />
+                <InfoItem label={t('partNo')} value={(asset.partNo as string) || '-'} />
+                <InfoItem label={t('manufacturer')} value={(asset.manufacturer as string) || '-'} />
+                <InfoItem label={t('model')} value={(asset.model as string) || '-'} />
+              </div>
+            </div>
+
+            <div className="premium-card p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">{t('remoteAccess')}</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <InfoItem label={t('anyDeskUser')} value={(asset.anyDeskUser as string) || '-'} />
+                <InfoItem label={t('passwordAnydesk')} value={(asset.passwordAnydesk as string) || '-'} />
+                <InfoItem label={t('userAdmin')} value={(asset.userAdmin as string) || '-'} />
+                <InfoItem label={t('passwordAdmin')} value={(asset.passwordAdmin as string) || '-'} />
+                <InfoItem label={t('ipAddress')} value={(asset.ipAddress as string) || '-'} />
+              </div>
+            </div>
+
+            <div className="premium-card p-6">
+              <h3 className="font-semibold text-slate-900 mb-4">{t('vendorInfo')}</h3>
+              <InfoItem label={t('vendorName')} value={(asset.vendorName as string) || '-'} />
               {Boolean(asset.notes) && (
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <p className="text-sm text-slate-500 mb-1">{t('notes')}</p>
