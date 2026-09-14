@@ -138,7 +138,7 @@ export default function SettingsPage() {
             <div className="premium-card p-6 space-y-4">
               <h3 className="font-semibold text-slate-900">{t('companyLogo')}</h3>
               <div className="flex items-center gap-4">
-                {typeof settings.logo === 'string' && settings.logo && <CompanyLogo src={settings.logo} size="lg" framed />}
+                {typeof settings.logo === 'string' && settings.logo && <CompanyLogo src={settings.logo} size="xl" framed />}
                 <label className="btn-secondary cursor-pointer">
                   <Upload className="w-4 h-4" /> {t('uploadLogo')}
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />

@@ -47,8 +47,8 @@ export function Sidebar() {
           {companyLogo && !logoFailed ? (
             <CompanyLogo
               src={companyLogo}
-              size="md"
-              className="max-w-full"
+              size="lg"
+              className="w-full max-w-[220px]"
               onError={() => setLogoFailed(true)}
             />
           ) : (

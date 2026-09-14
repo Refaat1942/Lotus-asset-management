@@ -6,10 +6,10 @@ import { cn } from '@/lib/utils';
 type CompanyLogoSize = 'sm' | 'md' | 'lg' | 'xl';
 
 const sizeClasses: Record<CompanyLogoSize, string> = {
-  sm: 'h-8 max-w-[100px]',
-  md: 'h-10 max-w-[140px]',
-  lg: 'h-16 max-w-[220px]',
-  xl: 'h-20 max-w-[280px]',
+  sm: 'h-10 max-w-[140px]',
+  md: 'h-14 max-w-[200px]',
+  lg: 'h-20 max-w-[280px]',
+  xl: 'h-28 max-w-[400px]',
 };
 
 interface CompanyLogoProps {
