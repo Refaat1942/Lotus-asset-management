@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { useApp } from '@/contexts/AppContext';
 import { PERMISSIONS } from '@/lib/permissions';
 import { formatDateTime } from '@/lib/utils';
-import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { LogoBrand } from '@/components/ui/LogoBrand';
 
 export default function SettingsPage() {
   const { t, locale, hasPermission, notify, setCompanyLogo, user, refreshUser } = useApp();
@@ -138,7 +138,9 @@ export default function SettingsPage() {
             <div className="premium-card p-6 space-y-4">
               <h3 className="font-semibold text-slate-900">{t('companyLogo')}</h3>
               <div className="flex items-center gap-4">
-                {typeof settings.logo === 'string' && settings.logo && <CompanyLogo src={settings.logo} size="xl" framed />}
+                {typeof settings.logo === 'string' && settings.logo && (
+                  <LogoBrand logo={settings.logo} appName={t('appName')} variant="card" className="max-w-sm" />
+                )}
                 <label className="btn-secondary cursor-pointer">
                   <Upload className="w-4 h-4" /> {t('uploadLogo')}
                   <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />

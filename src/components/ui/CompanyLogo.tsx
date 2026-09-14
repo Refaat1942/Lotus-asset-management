@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-type CompanyLogoSize = 'sm' | 'md' | 'lg' | 'xl';
+export type CompanyLogoSize = 'sm' | 'md' | 'lg' | 'hero' | 'sidebar' | 'card';
 
 const sizeClasses: Record<CompanyLogoSize, string> = {
-  sm: 'h-10 max-w-[140px]',
-  md: 'h-14 max-w-[200px]',
-  lg: 'h-20 max-w-[280px]',
-  xl: 'h-28 max-w-[400px]',
+  sm: 'h-8 w-auto max-w-[120px] object-contain',
+  md: 'h-12 w-auto max-w-[180px] object-contain',
+  lg: 'h-16 w-auto max-w-[240px] object-contain',
+  hero: 'w-full h-auto max-h-[120px] object-contain object-center',
+  sidebar: 'w-full h-auto max-h-[80px] object-contain object-center',
+  card: 'w-full h-auto max-h-[100px] object-contain object-center',
 };
 
 interface CompanyLogoProps {
@@ -17,7 +19,6 @@ interface CompanyLogoProps {
   alt?: string;
   size?: CompanyLogoSize;
   className?: string;
-  framed?: boolean;
   onError?: () => void;
 }
 
@@ -26,7 +27,6 @@ export function CompanyLogo({
   alt = 'Company logo',
   size = 'md',
   className,
-  framed = false,
   onError,
 }: CompanyLogoProps) {
   const [failed, setFailed] = useState(false);
@@ -49,12 +49,7 @@ export function CompanyLogo({
       src={logoSrc}
       alt={alt}
       onError={() => setFailed(true)}
-      className={cn(
-        'w-auto object-contain object-left',
-        sizeClasses[size],
-        framed && 'rounded-lg border border-slate-200 bg-white p-1.5',
-        className
-      )}
+      className={cn(sizeClasses[size], className)}
     />
   );
 }

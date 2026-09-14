@@ -10,7 +10,7 @@ import {
 import { useApp } from '@/contexts/AppContext';
 import { cn } from '@/lib/utils';
 import { PERMISSIONS } from '@/lib/permissions';
-import { CompanyLogo } from '@/components/ui/CompanyLogo';
+import { LogoBrand } from '@/components/ui/LogoBrand';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'dashboard', permission: null },
@@ -42,25 +42,14 @@ export function Sidebar() {
   return (
     <aside className="fixed top-0 bottom-0 w-64 bg-white border-e border-slate-100 flex flex-col z-40"
       style={{ insetInlineStart: 0 }}>
-      <div className="p-6 border-b border-slate-100">
-        <div className="space-y-3">
-          {companyLogo && !logoFailed ? (
-            <CompanyLogo
-              src={companyLogo}
-              size="lg"
-              className="w-full max-w-[220px]"
-              onError={() => setLogoFailed(true)}
-            />
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-header flex items-center justify-center shrink-0">
-                <Package className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="font-bold text-slate-900 text-sm leading-tight">{t('appName')}</h1>
-            </div>
-          )}
-          {user && <p className="text-xs text-slate-400">{user.username}</p>}
-        </div>
+      <div className="p-4 border-b border-slate-100">
+        <LogoBrand
+          logo={companyLogo}
+          appName={t('appName')}
+          variant="sidebar"
+          logoFailed={logoFailed}
+          onLogoError={() => setLogoFailed(true)}
+        />
       </div>
 
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
