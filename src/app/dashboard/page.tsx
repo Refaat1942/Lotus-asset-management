@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Package, UserCheck, UserX, DollarSign, TrendingDown, Building2, MapPin } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { Package, UserCheck, UserX, DollarSign, TrendingDown, Building2, MapPin, RefreshCw } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { Button } from '@/components/ui/Button';
 import { useApp } from '@/contexts/AppContext';
 import { formatCurrency } from '@/lib/utils';
 
@@ -13,25 +15,57 @@ interface DashboardData {
   unassignedAssets: number;
   totalValue: number;
   totalDepreciation: number;
-  byDepartment: { name: string; nameAr: string; count: number }[];
-  byBranch: { name: string; nameAr: string; count: number }[];
+  byDepartment: { id?: string | null; name: string; nameAr: string; count: number }[];
+  byBranch: { id?: string | null; name: string; nameAr: string; count: number }[];
   byStatus: { status: string; count: number }[];
 }
 
 export default function DashboardPage() {
   const { t, locale } = useApp();
+  const pathname = usePathname();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/dashboard', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      if (!res.ok) {
+        setData(null);
+        setError(t('error'));
+        return;
+      }
+      setData(await res.json());
+    } catch {
+      setData(null);
+      setError(t('error'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => setData(d))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
-  }, []);
+    if (pathname === '/dashboard') {
+      loadDashboard();
+    }
+  }, [pathname, loadDashboard]);
 
-  if (loading) {
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && pathname === '/dashboard') {
+        loadDashboard();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [pathname, loadDashboard]);
+
+  if (loading && !data) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
@@ -44,10 +78,22 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="space-y-8">
-        <div>
-          <h1 className="page-title">{t('dashboard')}</h1>
-          <p className="page-subtitle">{t('quickStats')}</p>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="page-title">{t('dashboard')}</h1>
+            <p className="page-subtitle">{t('quickStats')}</p>
+          </div>
+          <Button variant="secondary" onClick={loadDashboard} loading={loading}>
+            <RefreshCw className="w-4 h-4" />
+            {t('refresh')}
+          </Button>
         </div>
+
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
           <StatCard title={t('totalAssets')} value={data?.totalAssets || 0} icon={Package} color="green" />
@@ -67,7 +113,7 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {(data?.byDepartment ?? []).map((d) => (
-                <div key={d.name} className="flex items-center justify-between">
+                <div key={d.id || d.name} className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">{locale === 'ar' ? d.nameAr : d.name}</span>
                   <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">{d.count}</span>
                 </div>
@@ -87,7 +133,7 @@ export default function DashboardPage() {
             </div>
             <div className="space-y-3">
               {(data?.byBranch ?? []).map((b) => (
-                <div key={b.name} className="flex items-center justify-between">
+                <div key={b.id || b.name} className="flex items-center justify-between">
                   <span className="text-sm text-slate-600">{locale === 'ar' ? b.nameAr : b.name}</span>
                   <span className="text-sm font-semibold text-slate-900 bg-slate-100 px-2.5 py-0.5 rounded-full">{b.count}</span>
                 </div>

@@ -9,9 +9,9 @@ export function formatCurrency(value: number | string | null | undefined, locale
   if (value === null || value === undefined) return '-';
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '-';
-  return new Intl.NumberFormat(locale === 'ar' ? 'ar-SA' : 'en-US', {
+  return new Intl.NumberFormat(locale === 'ar' ? 'ar-EG' : 'en-EG', {
     style: 'currency',
-    currency: 'SAR',
+    currency: 'EGP',
     minimumFractionDigits: 2,
   }).format(num);
 }
@@ -19,7 +19,7 @@ export function formatCurrency(value: number | string | null | undefined, locale
 export function formatDate(date: Date | string | null | undefined, locale = 'en'): string {
   if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA' : 'en-US', {
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
@@ -29,7 +29,7 @@ export function formatDate(date: Date | string | null | undefined, locale = 'en'
 export function formatDateTime(date: Date | string | null | undefined, locale = 'en'): string {
   if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA' : 'en-US', {
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-EG' : 'en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const result = await requireAuth();
   if (result instanceof NextResponse) return result;
@@ -51,16 +54,23 @@ export async function GET() {
     const purchaseTotal = valueAgg._sum.purchasePrice || 0;
     const depreciation = Number(purchaseTotal) - Number(totalValue);
 
-    return NextResponse.json({
-      totalAssets,
-      assignedAssets,
-      unassignedAssets: totalAssets - assignedAssets,
-      byDepartment: departmentStats,
-      byBranch: branchStats,
-      byStatus: statusStats,
-      totalValue: Number(totalValue),
-      totalDepreciation: depreciation > 0 ? depreciation : 0,
-    });
+    return NextResponse.json(
+      {
+        totalAssets,
+        assignedAssets,
+        unassignedAssets: totalAssets - assignedAssets,
+        byDepartment: departmentStats,
+        byBranch: branchStats,
+        byStatus: statusStats,
+        totalValue: Number(totalValue),
+        totalDepreciation: depreciation > 0 ? depreciation : 0,
+      },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+        },
+      }
+    );
   } catch {
     return NextResponse.json({ error: 'Failed to load dashboard' }, { status: 500 });
   }

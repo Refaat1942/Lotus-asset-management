@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
@@ -249,7 +250,14 @@ export default function ImportPage() {
               </div>
             )}
 
-            <Button onClick={() => { setStep('upload'); setFile(null); setResult(null); }}>{t('importAction')}</Button>
+            <div className="flex gap-3 flex-wrap">
+              {result.success > 0 && (
+                <Link href="/dashboard" className="btn-primary inline-flex items-center gap-2">
+                  {t('viewDashboard')}
+                </Link>
+              )}
+              <Button variant="secondary" onClick={() => { setStep('upload'); setFile(null); setResult(null); }}>{t('importAction')}</Button>
+            </div>
           </div>
         )}
       </div>
