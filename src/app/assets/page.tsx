@@ -95,6 +95,7 @@ export default function AssetsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Asset | null>(null);
   const [form, setForm] = useState<AssetFormData>(emptyAssetForm());
+  const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
 
   const fetchLimit = viewMode === 'grid' ? '500' : '20';
 
@@ -117,6 +118,21 @@ export default function AssetsPage() {
   useEffect(() => {
     fetch('/api/departments').then((r) => r.json()).then(setDepartments).catch(() => {});
     fetch('/api/branches').then((r) => r.json()).then(setBranches).catch(() => {});
+    fetch('/api/assets/category-images')
+      .then((r) => r.json())
+      .then((images: { category: string; imageUrl: string }[]) => {
+        setCategoryImages(Object.fromEntries(images.map((img) => [img.category, img.imageUrl])));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCategoryImageChange = useCallback((category: string, imageUrl: string | null) => {
+    setCategoryImages((prev) => {
+      const next = { ...prev };
+      if (imageUrl) next[category] = imageUrl;
+      else delete next[category];
+      return next;
+    });
   }, []);
 
   const categoryCount = useMemo(() => {
@@ -248,6 +264,8 @@ export default function AssetsPage() {
             locale={locale}
             t={t}
             uncategorizedLabel={t('uncategorized')}
+            categoryImages={categoryImages}
+            onCategoryImageChange={handleCategoryImageChange}
           />
         ) : (
           <div className="premium-card overflow-hidden">

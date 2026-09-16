@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Camera, Fingerprint, Monitor, Laptop, Wifi, Printer, Server,
   HardDrive, Smartphone, Package, type LucideIcon,
@@ -30,6 +30,8 @@ interface CategoryVisualProps {
   manufacturer?: string | null;
   size: 'sm' | 'lg';
   className?: string;
+  /** Custom image URL set by a user, takes priority over the auto-detected image. */
+  imageUrl?: string | null;
 }
 
 const SIZE = { sm: 'w-12 h-12', lg: 'w-20 h-20 sm:w-24 sm:h-24' };
@@ -42,14 +44,18 @@ export function CategoryVisual({
   manufacturer,
   size,
   className,
+  imageUrl,
 }: CategoryVisualProps) {
   const visual = resolveCategoryVisual(category, name, device, manufacturer);
-  const [useIcon, setUseIcon] = useState(!visual.imageUrl);
+  const resolvedImageUrl = imageUrl || visual.imageUrl;
+  const [useIcon, setUseIcon] = useState(!resolvedImageUrl);
+  useEffect(() => setUseIcon(!resolvedImageUrl), [resolvedImageUrl]);
 
-  if (!useIcon && visual.imageUrl) {
+  if (!useIcon && resolvedImageUrl) {
     return (
       <img
-        src={visual.imageUrl}
+        key={resolvedImageUrl}
+        src={resolvedImageUrl}
         alt=""
         className={cn(
           SIZE[size],
