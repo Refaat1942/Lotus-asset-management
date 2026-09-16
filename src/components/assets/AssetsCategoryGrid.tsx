@@ -9,9 +9,18 @@ interface AssetsCategoryGridProps {
   locale: string;
   t: (key: string) => string;
   uncategorizedLabel: string;
+  categoryImages: Record<string, string>;
+  onCategoryImageChange: (category: string, imageUrl: string | null) => void;
 }
 
-export function AssetsCategoryGrid({ assets, locale, t, uncategorizedLabel }: AssetsCategoryGridProps) {
+export function AssetsCategoryGrid({
+  assets,
+  locale,
+  t,
+  uncategorizedLabel,
+  categoryImages,
+  onCategoryImageChange,
+}: AssetsCategoryGridProps) {
   const grouped = useMemo(() => {
     const map = new Map<string, AssetListItem[]>();
     for (const asset of assets) {
@@ -39,6 +48,8 @@ export function AssetsCategoryGrid({ assets, locale, t, uncategorizedLabel }: As
           assets={grouped.get(category) || []}
           locale={locale}
           t={t}
+          imageUrl={categoryImages[category] || null}
+          onImageChange={(imageUrl) => onCategoryImageChange(category, imageUrl)}
         />
       ))}
     </div>

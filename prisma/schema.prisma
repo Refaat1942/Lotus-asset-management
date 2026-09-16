@@ -265,6 +265,14 @@ model DepreciationRecord {
   @@map("depreciation_records")
 }
 
+model CategoryImage {
+  category  String   @id
+  imageUrl  String
+  updatedAt DateTime @updatedAt
+
+  @@map("category_images")
+}
+
 model SystemSetting {
   key       String   @id
   value     String
