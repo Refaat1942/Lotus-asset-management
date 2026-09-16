@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, Search, Eye, Package, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, Eye, Package, Pencil, Trash2, LayoutGrid, Table2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/Button';
-import { Input, Select } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { AssetForm, AssetFormData, emptyAssetForm } from '@/components/assets/AssetForm';
+import { AssetsCategoryGrid } from '@/components/assets/AssetsCategoryGrid';
 import { useApp } from '@/contexts/AppContext';
 import { PERMISSIONS } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/utils';
@@ -41,6 +42,8 @@ interface Asset {
   branch?: { name: string; nameAr?: string };
   currentAssignee?: { name: string; employeeId?: string };
 }
+
+type ViewMode = 'grid' | 'table';
 
 function toForm(asset?: Asset): AssetFormData {
   if (!asset) return emptyAssetForm();
@@ -86,15 +89,18 @@ export default function AssetsPage() {
   const [branchId, setBranchId] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [departments, setDepartments] = useState<{ id: string; name: string }[]>([]);
   const [branches, setBranches] = useState<{ id: string; name: string }[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Asset | null>(null);
   const [form, setForm] = useState<AssetFormData>(emptyAssetForm());
 
+  const fetchLimit = viewMode === 'grid' ? '500' : '20';
+
   const fetchAssets = useCallback(() => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '20' });
+    const params = new URLSearchParams({ page: String(page), limit: fetchLimit });
     if (search) params.set('search', search);
     if (departmentId) params.set('departmentId', departmentId);
     if (branchId) params.set('branchId', branchId);
@@ -105,13 +111,18 @@ export default function AssetsPage() {
       .then((data) => { setAssets(data.assets || []); setTotal(data.total || 0); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [page, search, departmentId, branchId, status]);
+  }, [page, search, departmentId, branchId, status, fetchLimit]);
 
   useEffect(() => { fetchAssets(); }, [fetchAssets]);
   useEffect(() => {
     fetch('/api/departments').then((r) => r.json()).then(setDepartments).catch(() => {});
     fetch('/api/branches').then((r) => r.json()).then(setBranches).catch(() => {});
   }, []);
+
+  const categoryCount = useMemo(() => {
+    const set = new Set(assets.map((a) => a.category?.trim() || t('uncategorized')));
+    return set.size;
+  }, [assets, t]);
 
   const openCreate = () => {
     setEditing(null);
@@ -164,16 +175,37 @@ export default function AssetsPage() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="page-title">{t('assets')}</h1>
-            <p className="page-subtitle">{total} {t('results')}</p>
+            <p className="page-subtitle">
+              {total} {t('results')}
+              {viewMode === 'grid' && categoryCount > 0 && ` · ${categoryCount} ${t('category')}`}
+            </p>
           </div>
-          {hasPermission(PERMISSIONS.CREATE_ASSETS) && (
-            <Button onClick={openCreate}>
-              <Plus className="w-4 h-4" /> {t('addNew')}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
+              <button
+                type="button"
+                onClick={() => { setViewMode('grid'); setPage(1); }}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'grid' ? 'bg-lotus-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <LayoutGrid className="w-4 h-4" /> {t('gridView')}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setViewMode('table'); setPage(1); }}
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${viewMode === 'table' ? 'bg-lotus-600 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Table2 className="w-4 h-4" /> {t('tableView')}
+              </button>
+            </div>
+            {hasPermission(PERMISSIONS.CREATE_ASSETS) && (
+              <Button onClick={openCreate}>
+                <Plus className="w-4 h-4" /> {t('addNew')}
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="premium-card p-5">
@@ -201,17 +233,24 @@ export default function AssetsPage() {
           </div>
         </div>
 
-        <div className="premium-card overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center h-48">
-              <div className="animate-spin h-8 w-8 border-4 border-lotus-500 border-t-transparent rounded-full" />
-            </div>
-          ) : assets.length === 0 ? (
-            <div className="text-center py-16 text-slate-400">
-              <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p>{t('noData')}</p>
-            </div>
-          ) : (
+        {loading ? (
+          <div className="flex items-center justify-center h-48 premium-card">
+            <div className="animate-spin h-8 w-8 border-4 border-lotus-500 border-t-transparent rounded-full" />
+          </div>
+        ) : assets.length === 0 ? (
+          <div className="text-center py-16 text-slate-400 premium-card">
+            <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>{t('noData')}</p>
+          </div>
+        ) : viewMode === 'grid' ? (
+          <AssetsCategoryGrid
+            assets={assets}
+            locale={locale}
+            t={t}
+            uncategorizedLabel={t('uncategorized')}
+          />
+        ) : (
+          <div className="premium-card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[1400px]">
                 <thead>
@@ -223,14 +262,8 @@ export default function AssetsPage() {
                     <th className="table-header whitespace-nowrap">{t('category')}</th>
                     <th className="table-header whitespace-nowrap">{t('model')}</th>
                     <th className="table-header whitespace-nowrap">{t('manufacturer')}</th>
-                    <th className="table-header whitespace-nowrap">{t('operatingSystem')}</th>
-                    <th className="table-header whitespace-nowrap">{t('partNo')}</th>
-                    <th className="table-header whitespace-nowrap">{t('department')}</th>
                     <th className="table-header whitespace-nowrap">{t('branch')}</th>
-                    <th className="table-header whitespace-nowrap">{t('site')}</th>
-                    <th className="table-header whitespace-nowrap">{t('employeePosition')}</th>
                     <th className="table-header whitespace-nowrap">{t('assignee')}</th>
-                    <th className="table-header whitespace-nowrap">{t('vendorName')}</th>
                     <th className="table-header whitespace-nowrap">{t('status')}</th>
                     <th className="table-header whitespace-nowrap">{t('currentValue')}</th>
                     <th className="table-header whitespace-nowrap">{t('actions')}</th>
@@ -241,19 +274,13 @@ export default function AssetsPage() {
                     <tr key={asset.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="table-cell font-mono text-xs font-medium text-lotus-700 whitespace-nowrap">{asset.assetCode}</td>
                       <td className="table-cell font-medium max-w-[200px] truncate" title={asset.name}>{asset.name}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.device || ''}>{asset.device || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.device || '-'}</td>
                       <td className="table-cell font-mono text-xs whitespace-nowrap">{asset.serialNumber || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.category || ''}>{asset.category || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.model || ''}>{asset.model || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.manufacturer || ''}>{asset.manufacturer || '-'}</td>
-                      <td className="table-cell max-w-[100px] truncate" title={asset.operatingSystem || ''}>{asset.operatingSystem || '-'}</td>
-                      <td className="table-cell whitespace-nowrap">{asset.partNo || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.department?.name || ''}>{asset.department?.name || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.branch?.name || ''}>{asset.branch?.name || '-'}</td>
-                      <td className="table-cell whitespace-nowrap">{asset.site || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.employeePosition || ''}>{asset.employeePosition || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.currentAssignee?.name || ''}>{asset.currentAssignee?.name || '-'}</td>
-                      <td className="table-cell max-w-[120px] truncate" title={asset.vendorName || ''}>{asset.vendorName || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.category || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.model || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.manufacturer || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.branch?.name || '-'}</td>
+                      <td className="table-cell max-w-[120px] truncate">{asset.currentAssignee?.name || '-'}</td>
                       <td className="table-cell"><StatusBadge status={asset.status} /></td>
                       <td className="table-cell whitespace-nowrap">{formatCurrency(asset.currentValue, locale)}</td>
                       <td className="table-cell">
@@ -278,20 +305,19 @@ export default function AssetsPage() {
                 </tbody>
               </table>
             </div>
-          )}
-
-          {total > 20 && (
-            <div className="flex items-center justify-between p-4 border-t border-slate-100">
-              <span className="text-sm text-slate-500">
-                {t('of')} {Math.min(page * 20, total)} {total}
-              </span>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>←</Button>
-                <Button variant="secondary" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>→</Button>
+            {total > 20 && (
+              <div className="flex items-center justify-between p-4 border-t border-slate-100">
+                <span className="text-sm text-slate-500">
+                  {t('of')} {Math.min(page * 20, total)} {total}
+                </span>
+                <div className="flex gap-2">
+                  <Button variant="secondary" size="sm" disabled={page === 1} onClick={() => setPage(page - 1)}>←</Button>
+                  <Button variant="secondary" size="sm" disabled={page * 20 >= total} onClick={() => setPage(page + 1)}>→</Button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? t('editAsset') : t('create') + ' ' + t('assets')} size="lg">
